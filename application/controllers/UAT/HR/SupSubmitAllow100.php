@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class SupSubmitAllow100 extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -19,7 +19,7 @@ class SupSubmitAllow100 extends REST_Controller
         $teamlist   = json_decode($this->input->post('teamlist'), true);
         $date       = date('Y-m-d H:i:s');
 
-        $sql = "UPDATE SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail SET SupCheckTime = ?, SupApproveStatus = ?, Latitude = ?, Longitude = ?, 
+        $sql = "UPDATE SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail SET SupCheckTime = ?, SupApproveStatus = ?, Latitude = ?, Longitude = ?,
                 UpdateDate = ?, UpdateBy = ?, SupCause = ?
                 WHERE DetailID = ?";
         foreach($teamlist as $k => $v) {

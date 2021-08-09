@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/CreatorJwt.php');
 require(APPPATH.'libraries/Format.php');
-class GetLastCheck extends REST_Controller { 
+class GetLastCheck extends REST_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->database();
@@ -62,7 +62,7 @@ class GetLastCheck extends REST_Controller {
         $divisionId = $data['divisionId'];
         $date       = date('Y-m-d');
 
-        $sql        = "SELECT * FROM ZKTimeData.dbo.CHECKINOUT where EmpId = ?";
+        $sql        = "SELECT * FROM SQLUAT.ZKTimeData.dbo.CHECKINOUT where EmpId = ?";
         $stmt       = $this->db->query($sql, array($empId));
         if ($stmt->num_rows() > 0) {
             print_r($stmt);
@@ -75,6 +75,6 @@ class GetLastCheck extends REST_Controller {
                 ), 200
             );
         }
-        
+
     }
 }

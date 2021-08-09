@@ -57,159 +57,214 @@ class GetTeamList extends REST_Controller {
     public function index_post() {
         $teamno = $this->input->post('teamNo');
         $depid  = $this->input->post('depid');
-        $fnno   = $this->input->post('fnno');
-        $fnyear = $this->input->post('fnyear');
         $empId  = $this->input->post('empId');
+        $fnno   = $this->getFnNo($depid);
+        $fnyear = $this->getFnYear($depid);
+        $CloseFnNo  = $this->getCloseFnNo($depid);
+        $CloseNum   = $this->getCloseNum($depid);
 
-        $sql = "SELECT SL.saleemp, SL.salecode, SL.FName + ' ' + SL.LName as Fullname, SM.CitizenID
-                FROM TSR_Application.dbo.NPT_Sale_Log AS SL WITH(NOLOCK)
-                LEFT JOIN TSR_Application.dbo.NPT_Sale_Main AS SM ON SL.SaleID = SM.SaleID
-                WHERE ISNULL(LEFT(SL.Salecode,4), '-')+ISNULL(cast(SL.TeamNo AS varchar(4)),'-') = ?
-                AND SL.PosID < 3 AND SL.TeamNo IS NOT NULL AND SL.SaleStatus != 'R' AND SL.DepID = ?
-                AND SL.FnYear = ? AND SL.FnNo = ? AND SL.PositID NOT IN ('65','85')"; //AND ISNULL(SL.SaleEmpType1, 0) != 8";
-        $stmt = $this->db->query($sql, array($teamno, $depid, $fnyear, $fnno));
-        if ($stmt->num_rows() > 0 || $stmt->result_array() != "") {
-            $this->createMaster($teamno, $depid, $fnno, $fnyear, $stmt->result_array(), $empId);
+        if ($fnno != 0) {
+
+            if ($fnyear != 0) {
+
+              if (!$this->checkCreateMaster($teamno, $depid, $fnno, $fnyear)) {
+
+                  $sql = "SELECT SL.saleemp, SL.salecode, SL.FName + ' ' + SL.LName as Fullname, SM.CitizenID
+                          FROM TSR_Application.dbo.NPT_Sale_Log AS SL WITH(NOLOCK)
+                          INNER JOIN TSR_Application.dbo.NPT_Sale_Hierarchy AS SH on SL.SaleCode = SH.CSaleCode AND SL.FnNo = SH.FnNo AND SL.FnYear = SH.FnYear AND SL.DepID = SH.DepID AND SL.PosID = SH.PosID
+                          LEFT JOIN TSR_Application.dbo.NPT_Sale_Main AS SM ON SL.SaleID = SM.SaleID
+                          WHERE ISNULL(LEFT(SL.Salecode,4), '-')+ISNULL(cast(SL.TeamNo AS varchar(4)),'-') = ?
+                          AND SL.PosID < 3 AND SL.TeamNo IS NOT NULL AND SL.SaleStatus != 'R' AND SL.DepID = ?
+                          AND SL.FnYear = ? AND SL.FnNo = ? AND SL.PositID NOT IN ('65','85') AND SL.ChanelCode = '000'
+                          ORDER BY saleemp"; //AND ISNULL(SL.SaleEmpType1, 0) != 8";
+                  $stmt = $this->db->query($sql, array($teamno, $depid, $fnyear, $fnno));
+
+                    if ($stmt->num_rows() > 0) {
+                        $result = $stmt->result_array();
+                        $team = [];
+                        foreach($result as $k => $v) {
+                          $t = array(
+                              "teamId"            => 0,
+                              "detailId"          => 0,
+                              "saleemp"           => $v["saleemp"],
+                              "salecode"          => $v["salecode"],
+                              "Fullname"          => $v["Fullname"],
+                              "CitizenID"         => $v["CitizenID"],
+                              "PayAmount"         => $CloseFnNo == 0 ? '200' : $this->getPaymentAmt($depid, $fnno, $fnyear, $v["salecode"], $CloseNum),
+                              "CheckTime"         => '0',
+                              "LeadApproveStatus" => 0,
+                              "LeadCheckTime"     => NULL,
+                              "saletype"          => $v["salecode"] == NULL ? 0 : $this->getSaleType($depid, $fnno, $fnyear, $v["salecode"]),
+                              "CostBranch"        => $this->getCostBranch(),
+                              "TurnproDate"       => $v["salecode"] == NULL ? NULL : $this->getTurnProDate($depid, $fnno, $fnyear, $v["salecode"]),
+                              "CloseFnNo"         => $CloseFnNo,
+                              "CloseNum"          => $CloseNum,
+                              "MaxPay"            => $CloseFnNo == 0 ? 200 : ($CloseNum * 200) + 201,
+                              "SaleImage"         => "",
+                              "EmpImage"          => $v["saleemp"] == NULL ? "" : str_replace('A','0',$v["saleemp"]),
+                          );
+
+                            array_push($team, $t);
+                        }
+                        $this->response(
+                            array(
+                                "status"                => "SUCCESS",
+                                "message"               => "ข้อมูลสายงาน",
+                                "CostBranch"            => $this->getCostBranch(),
+                                "LeadApproveStatus"     => $this->gerApproveStatus($teamno, $depid, $fnno, $fnyear),
+                                "data"                  => $team
+                            ), 200
+                        );
+                    } else {
+                      $this->response(
+                          array(
+                              "status"    => "FAILED",
+                              "message"   => "ไม่พบข้อมูลสายงาน",
+                              "data"      => ""
+                          ), 200
+                      );
+                    }
+                } else {
+                    $Teamid = $this->getId($teamno, $depid, $fnno, $fnyear);
+                    $sql = "SELECT * FROM TSR_DB1.dbo.SaleTeam_Work_Detail WITH(NOLOCK)
+                            WHERE TeamID = ?
+                            AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY DetailID";
+                    $stmt = $this->db->query($sql, array($Teamid));
+
+                    if ($stmt->num_rows() > 0) {
+                      $result = $stmt->result_array();
+                      $team = [];
+                      foreach($result as $k => $v) {
+                            $t = array(
+                                "teamId"            => $v["TeamID"],
+                                "detailId"          => $v["DetailID"],
+                                "saleemp"           => $v["EmpID"],
+                                "salecode"          => $v["SaleCode"],
+                                "Fullname"          => $v["EmpName"],
+                                "CitizenID"         => $v["CitizenID"],
+                                "PayAmount"         => $v["LeadApproveStatus"] == 0 ? $this->getPaymentAmt($depid, $fnno, $fnyear, $v["SaleCode"], $CloseNum) : strval($v["PaymentAmount"]),
+                                "CheckTime"         => $v["LeadCheckTime"] == NULL ? '0' : '1',
+                                "LeadApproveStatus" => $v["LeadApproveStatus"],
+                                "LeadCheckTime"     => $v["LeadCheckTime"],
+                                "saletype"          => $v["SaleCode"] == NULL ? 0 : $this->getSaleType($depid, $fnno, $fnyear, $v["SaleCode"]),
+                                "CostBranch"        => $this->getCostBranch(),
+                                "TurnproDate"       => $v["SaleCode"] == NULL ? NULL : $this->getTurnProDate($depid, $fnno, $fnyear, $v["SaleCode"]),
+                                "CloseFnNo"         => $CloseFnNo,
+                                "CloseNum"          => $CloseNum,
+                                "MaxPay"            => $CloseFnNo == 0 ? 200 : ($CloseNum * 200) + 201,
+                                "SaleImage"         => $v["Image"] == NULL ? "" : $v["Image"],
+                                "EmpImage"          => $v["EmpID"] == NULL ? "" : str_replace('A','0',$v["EmpID"]),
+                            );
+
+                            array_push($team, $t);
+                        }
+
+                        $this->response(
+                            array(
+                                "status"                => "SUCCESS",
+                                "message"               => "ข้อมูลสายงาน",
+                                "CostBranch"            => $this->getCostBranch(),
+                                "LeadApproveStatus"     => $this->gerApproveStatus($teamno, $depid, $fnno, $fnyear),
+                                "data"                  => $team
+                            ), 200
+                        );
+                    } else {
+                      $this->response(
+                          array(
+                              "status"    => "FAILED",
+                              "message"   => "ไม่สามารถเตรียมข้อมูลสายงาน",
+                              "data"      => ""
+                          ), 200
+                      );
+                    }
+                }
+            } else {
+                $this->response(
+                    array(
+                        "status"    => "FAILED",
+                        "message"   => "ไม่พบข้อมูลปีของปักษ์ ณ วันที่ปัจจุบัน",
+                        "data"      => ""
+                    ), 200
+                );
+            }
         } else {
             $this->response(
                 array(
                     "status"    => "FAILED",
-                    "message"   => "ไม่พบข้อมูลสายงาน",
-                    "data"      => $stmt
+                    "message"   => "ปิดปักษ์แล้ว ณ วันที่ปัจจุบัน",
+                    "data"      => ""
                 ), 200
             );
         }
     }
 
-    public function createMaster($teamno, $depid, $fnno, $fnyear, $teamlist, $empId) {
-        $date = date('Y-m-d H:i:s');
-        $leadStatus;
-        $data = array(
-            'TeamCode'              => $teamno,
-            'FnYear'                => $fnyear,
-            'FnNo'                  => $fnno,
-            'DepID'                 => $depid,
-            'LeadCheckNum'          => 0,
-            'LeadCheckWorkNum'      => 0,
-            'LeadCheckOutNum'       => 0,
-            'LeadApproveStatus'     => 0,
-            'SupCheckNum'           => 0,
-            'SupCheckWorkNum'       => 0,
-            'SupCheckOutNum'        => 0,
-            'SupApproveStatus'      => 0,
-            'PaymentCheckNum'       => 0,
-            'PaymentCheckWorkNum'   => 0,
-            'PaymentCheckOutNum'    => 0,
-            'PaymentAmount'         => 0,
-            'PaymentBalance'        => 0,
-            'PaymentStatus'         => 0,
-            'CreateDate'            => $date,
-            'CreateBy'              => $empId,
-            'EmpID'                 => $empId
-        );
-
-        if (!$this->checkCreateMaster($teamno, $depid, $fnno, $fnyear)) {
-            $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work', $data);
-            if ($stmt) {
-                $id = $this->last_insert_id($teamno, $depid, $fnno, $fnyear);
-                foreach($teamlist as $k => $v) {
-                    $detail = array(
-                        'TeamID'                => $id,
-                        'EmpID'                 => $v['saleemp'],
-                        'EmpName'               => $v['Fullname'],
-                        'SaleCode'              => $v['salecode'],
-                        'LeadApproveStatus'     => 0,
-                        'SupApproveStatus'      => 0,
-                        'PaymentStatus'         => 0,
-                        'PaymentAmount'         => 0,
-                        'PaymentBalance'        => 0,
-                        'CitizenID'             => $v['CitizenID'],
-                        'CreateDate'            => $date,
-                        'CreateBy'              => $empId
-                    );
-
-                    $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work_Detail', $detail);
-                }
-
-                if ($this->db->affected_rows() > 0) {
-                    $sql = "SELECT * FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS swd WHERE swd.TeamID = ?";
-                    $stmt = $this->db->query($sql, array($id));
-                    $team = [];
-                    foreach($stmt->result_array() as $k => $v) {
-                        $t = array(
-                            "teamId"            => $id,
-                            "detailId"          => $v['DetailID'],
-                            "saleemp"           => $v["EmpID"],
-                            "salecode"          => $v["SaleCode"],
-                            "Fullname"          => $v["EmpName"],
-                            "CitizenID"         => $v['CitizenID'],
-                            "PayAmount"         => $v['PaymentAmount'] == 0 ? '200' : strval($v['PaymentAmount']),
-                            "CheckTime"         => $v["LeadCheckTime"] == NULL ? '0' : '1',
-                            "LeadApproveStatus" => $v["LeadApproveStatus"],
-                            "LeadCheckTime"     => $v["LeadCheckTime"],
-                            "CostBranch"        => $this->getCostBranch(),
-                            "SaleImage"         => $v["Image"] == NULL ? "" : $v["Image"],
-                            "EmpImage"          => $v["EmpID"] == NULL ? "" : str_replace('A','0',$v["EmpID"]),
-                        );
-
-                        array_push($team, $t);
-                    }
-                    $this->response(
-                        array(
-                            "status"                => "SUCCESS",
-                            "message"               => "ข้อมูลสายงาน",
-                            "CostBranch"            => $this->getCostBranch(),
-                            "LeadApproveStatus"     => $this->gerApproveStatus($teamno, $depid, $fnno, $fnyear),
-                            "data"                  => $team
-                        ), 200
-                    );
-                } else {
-                    $this->response(
-                        array(
-                            "status"    => "FAILED",
-                            "message"   => "ไม่สามารถเตรียมข้อมูลสายงาน",
-                            "data"      => ""
-                        ), 200
-                    );
-                }
-            }
+    public function getPaymentAmt($depid, $fnno, $fnyear, $saleno, $CloseNum) {
+        if ($saleno == NULL) {
+            $amt = strval(($CloseNum * 200) + 200);
+            return $amt;
         } else {
-            $Teamid = $this->getId($teamno, $depid, $fnno, $fnyear);
-            $leadStatus;
-            $sql = "SELECT * FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd
-                    WHERE stwd.TeamID = ?
-                    AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY DetailID";
-            $stmt = $this->db->query($sql, array($Teamid));
-            $team = [];
-            foreach($stmt->result_array() as $k => $v) {
-                $t = array(
-                    "teamId"            => $v["TeamID"],
-                    "detailId"          => $v["DetailID"],
-                    "saleemp"           => $v["EmpID"],
-                    "salecode"          => $v["SaleCode"],
-                    "Fullname"          => $v["EmpName"],
-                    "CitizenID"         => $v["CitizenID"],
-                    "PayAmount"         => $v["PaymentAmount"] == 0 ? '200' : strval($v["PaymentAmount"]),
-                    "CheckTime"         => $v["LeadCheckTime"] == NULL ? '0' : '1',
-                    "LeadApproveStatus" => $v["LeadApproveStatus"],
-                    "LeadCheckTime"     => $v["LeadCheckTime"],
-                    "CostBranch"        => $this->getCostBranch(),
-                    "SaleImage"         => $v["Image"] == NULL ? "" : $v["Image"],
-                    "EmpImage"          => $v["EmpID"] == NULL ? "" : str_replace('A','0',$v["EmpID"]),
-                );
-
-                array_push($team, $t);
+            if ($this->getSaleType($depid, $fnno, $fnyear, $saleno) == 0) {
+                $diffdatepro = $this->getDiffTurnProDate($depid, $fnno, $fnyear, $saleno);
+                  if ($diffdatepro > 0) {
+                      if ($diffdatepro < $CloseNum) {
+                          $amt2 = strval(($diffdatepro * 200) + 200);
+                          return $amt2;
+                      } else {
+                          $amt3 = strval(($CloseNum * 200) + 200);
+                          return $amt3;
+                      }
+                } else {
+                    return '200';
+                }
+            } else {
+                return '200';
             }
+        }
+    }
 
-            $this->response(
-                array(
-                    "status"                => "SUCCESS",
-                    "message"               => "ข้อมูลสายงาน",
-                    "CostBranch"            => $this->getCostBranch(),
-                    "LeadApproveStatus"     => $this->gerApproveStatus($teamno, $depid, $fnno, $fnyear),
-                    "data"                  => $team
-                ), 200
-            );
+    public function getFnNo($depid) {
+        $sql = "SELECT TOP 1 Fortnight_no FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_no;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getFnYear($depid) {
+        $sql = "SELECT TOP 1 Fortnight_year FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_year;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getCloseFnNo($depid) {
+        $sql = "SELECT TOP 1 * FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY Fortnight_no DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getCloseNum($depid) {
+        $sql = "SELECT TOP 1 DateOffset FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY Fortnight_no DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->DateOffset;
+        } else {
+            return 0;
         }
     }
 
@@ -224,20 +279,62 @@ class GetTeamList extends REST_Controller {
         }
     }
 
-    public function last_insert_id($teamno, $depid, $fnno, $fnyear) {
-        $sql = "SELECT TOP 1 * FROM TSR_DB1.dbo.SaleTeam_Work WHERE TeamCode = ? AND DepID = ? AND FnNo = ? AND FnYear = ?
-                AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY TeamID DESC";
+    public function getId($teamno, $depid, $fnno, $fnyear) {
+        $sql = "SELECT TeamID FROM TSR_DB1.dbo.SaleTeam_Work WHERE TeamCode = ? AND DepID = ? AND FnNo = ? AND FnYear = ?
+                AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
         $stmt = $this->db->query($sql, array($teamno, $depid, $fnno, $fnyear));
-        return $stmt->row()->TeamID;
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->TeamID;
+        } else {
+            return 0;
+        }
     }
 
     public function getCostBranch() {
-        $date = date('d-m-Y');
-        $sql = "SELECT CONVERT(varchar, LockDate, 105), IsActive FROM Allowance.dbo.CostBranch_LockData
-                WHERE CONVERT(varchar, LockDate, 105) = ? AND IsActive = 1";
-        $stmt = $this->db->query($sql, array($date));
+        $sql = "SELECT CONVERT(varchar, LockDate, 105) AS IsDate, IsActive FROM Allowance.dbo.CostBranch_LockData
+                WHERE CONVERT(varchar, LockDate, 105) = CONVERT(varchar, GETDATE(), 105) AND IsActive = 1";
+        $stmt = $this->db->query($sql);
         if ($stmt->num_rows() > 0) {
             return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getSaleType($depid, $fnno, $fnyear, $saleno) {
+        $sql = "SELECT TOP 1 CASE WHEN DATEDIFF(dd,DATEADD(dd,-1,StartDate),GETDATE()) >= 31 THEN 1 ELSE (CASE WHEN saleempType = 1 THEN 0 ELSE 1 END) END AS EmpType
+                FROM TSR_Application.dbo.NPT_Sale_Log
+                WHERE DepID = ? AND FnNo = ? AND FnYear = ? AND SaleCode = ?
+                AND SaleStatus IN ('N','P','D') AND PositID NOT IN ('65','85') AND PosID < 3 ORDER BY CreateDate DESC";
+        $stmt = $this->db->query($sql, array($depid, $fnno, $fnyear, $saleno));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->EmpType;
+        } else {
+            return 9;
+        }
+    }
+
+    public function getTurnProDate($depid, $fnno, $fnyear, $saleno) {
+        $sql = "SELECT TOP 1 DATEADD(day,31,StartDate) AS Turnpro
+                FROM TSR_Application.dbo.NPT_Sale_Log
+                WHERE DepID = ? AND FnNo = ? AND FnYear = ? AND SaleCode = ?
+                AND SaleStatus IN ('N','P','D') AND PositID NOT IN ('65','85') AND PosID < 3 ORDER BY CreateDate DESC";
+        $stmt = $this->db->query($sql, array($depid, $fnno, $fnyear, $saleno));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Turnpro;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function getDiffTurnProDate($depid, $fnno, $fnyear, $saleno) {
+        $sql = "SELECT TOP 1 DATEDIFF(day, GETDATE(), DATEADD(day,31,StartDate)) AS DiffDate
+                FROM TSR_Application.dbo.NPT_Sale_Log
+                WHERE DepID = ? AND FnNo = ? AND FnYear = ? AND SaleCode = ?
+                AND SaleStatus IN ('N','P','D') AND PositID NOT IN ('65','85') AND PosID < 3 ORDER BY CreateDate DESC";
+        $stmt = $this->db->query($sql, array($depid, $fnno, $fnyear, $saleno));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->DiffDate;
         } else {
             return 0;
         }
@@ -249,17 +346,6 @@ class GetTeamList extends REST_Controller {
         $stmt = $this->db->query($sql, array($teamno, $depid, $fnno, $fnyear));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->LeadApproveStatus;
-        } else {
-            return 0;
-        }
-    }
-
-    public function getId($teamno, $depid, $fnno, $fnyear) {
-        $sql = "SELECT TeamID FROM TSR_DB1.dbo.SaleTeam_Work WHERE TeamCode = ? AND DepID = ? AND FnNo = ? AND FnYear = ?
-                AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
-        $stmt = $this->db->query($sql, array($teamno, $depid, $fnno, $fnyear));
-        if ($stmt->num_rows() > 0) {
-            return $stmt->row()->TeamID;
         } else {
             return 0;
         }

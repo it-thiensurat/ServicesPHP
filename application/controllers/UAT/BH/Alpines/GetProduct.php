@@ -16,9 +16,9 @@ class GetProduct extends REST_Controller
     }
 
     public function index_post() {
-        $product_id = $this->input->post('productId');
-        $sql = "SELECT * FROM SQLUAT.TSRData_Source.dbo.BigHead_AlpineProductSpec WHERE ProductID = ?";
-        $stmt = $this->db->query($sql, array($product_id));
+        $customerId = $this->input->post('customerId');
+        $sql        = "SELECT * FROM SQLUAT.TSR_DB1.dbo.ALPINE_CUSTOMER AS ac WHERE ac.APCUS_ID = ? AND ac.APCUS_STATUS = ?";
+        $stmt       = $this->db->query($sql, array($customerId, 0));
         if ($stmt->num_rows() > 0) {
             $this->response(
                 array(
@@ -35,6 +35,14 @@ class GetProduct extends REST_Controller
                     "data"      => $product_id
                 ), 200
             );
+        }
+    }
+
+    public function getQuotationId($customerId) {
+        $sql = "SELECT * FROM SQLUAT.TSR_DB1.dbo.ALPINE_QUOTATION WHERE ";
+        $stmt = $this->db->query($sql, array($customerId));
+        if ($stmt->num_rows() > 0) {
+
         }
     }
 }

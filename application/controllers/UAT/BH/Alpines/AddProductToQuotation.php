@@ -27,6 +27,10 @@ class AddProductToQuotation extends REST_Controller
         $discount                   = $this->input->post('discount');
         $total                      = $this->input->post('total');
         $grand_total                = $this->input->post('grandTotal');
+        $payment_type               = $this->input->post('paymentType');
+        $transport                  = $this->input->post('transport');
+        $actionType                 = $this->input->post('actionType');
+        $quotationId                = $this->input->post('quotationId');
         $date                       = date('Y-m-d H:i:s');
         $currentdate                = date('Y-m-d');
 
@@ -38,9 +42,15 @@ class AddProductToQuotation extends REST_Controller
             'APCUS_UPDATE_BY'   => $emp_id
         );
 
+        $payType = 0;
+        if ($payment_type == "1") {
+            $payType = 0;
+        } else {
+            $payType = 1;
+        }
+
         $this->db->where('APCUS_ID', $customer_id);
         if ($this->db->update('TSR_DB1.dbo.ALPINE_CUSTOMER', $dataCustomer)) {
-            $quotationId = $this->generateQuotationNumber();
             $dataQuotation = array(
                 'APQ_ID'                => $quotationId,
                 'APCUS_ID'              => $customer_id,
@@ -54,38 +64,144 @@ class AddProductToQuotation extends REST_Controller
                 'APQ_TOTAL'             => floatval($total),
                 'APQ_GRAND_TOTAL'       => floatval($grand_total),
                 'APQ_STATUS'            => 0,
-                'APQ_CREATE_BY'         => $emp_id
+                'APQ_CREATE_BY'         => $emp_id,
+                'APQ_PAYMENT_TYPE'      => $payType,
+                'APQ_TRANSPORT'         => floatval($transport)
             );
 
-            if ($this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
-                foreach($product as $k => $v) {
-                    $dataDetail = array(
-                        'APQ_ID'            => $quotationId,
-                        'APQD_PROD_ID'      => $v['product_id'],
-                        'APQD_PROD_QTY'     => $v['product_qty'],
-                        'APQD_UNIT_PRICE'   => floatval($v['product_price']),
-                        'APQD_STATUS'       => 1,
-                        'APQD_CREATE_BY'    => $emp_id
+            if ($actionType == "edit") {
+                if ($quotationId == "") {
+                    $quotationId = $this->generateQuotationNumber();
+                    $dataQuotation = array(
+                        'APQ_ID'                => $quotationId,
+                        'APCUS_ID'              => $customer_id,
+                        'APQ_DATE'              => date('Y-m-d'),
+                        'APQ_EXPIRE_DATE'       => date("Y-m-d"),
+                        'APQ_EMP_ID'            => $emp_id,
+                        'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
+                        'APQ_PROJECTNAME'       => $project_name,
+                        'APQ_PROMOTION_TEXT'    => $promotion_text,
+                        'APQ_DISCOUNT'          => floatval($discount),
+                        'APQ_TOTAL'             => floatval($total),
+                        'APQ_GRAND_TOTAL'       => floatval($grand_total),
+                        'APQ_STATUS'            => 0,
+                        'APQ_CREATE_BY'         => $emp_id,
+                        'APQ_PAYMENT_TYPE'      => $payType,
+                        'APQ_TRANSPORT'         => floatval($transport)
                     );
-                    $this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION_DETAILS', $dataDetail);
+                    if ($this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
+                        foreach($product as $k => $v) {
+                            $dataDetail = array(
+                                'APQ_ID'            => $quotationId,
+                                'APQD_PROD_ID'      => $v['product_id'],
+                                'APQD_PROD_QTY'     => $v['product_qty'],
+                                'APQD_UNIT_PRICE'   => floatval($v['product_price']),
+                                'APQD_STATUS'       => 1,
+                                'APQD_CREATE_BY'    => $emp_id
+                            );
+                            $this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION_DETAILS', $dataDetail);
+                        }
+                        $this->db->trans_commit();
+                        $this->response(
+                            array(
+                                "status"    => "SUCCESS",
+                                "message"   => "บันทึกข้อมูลสำเร็จ",
+                                "data"      => $quotationId
+                            ), 200
+                        );
+                    } else {
+                        $this->db->trans_rollback();
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถสร้างใบเสนอราคาได้",
+                                "data"      => ""
+                            ), 200
+                        );
+                    }
+                } else {
+                    $this->deleteProduct($quotationId);
+                    $this->db->where('APQ_ID', $quotationId);
+                    if ($this->db->update('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
+                        foreach($product as $k => $v) {
+                            $dataDetail = array(
+                                'APQ_ID'            => $quotationId,
+                                'APQD_PROD_ID'      => $v['product_id'],
+                                'APQD_PROD_QTY'     => $v['product_qty'],
+                                'APQD_UNIT_PRICE'   => floatval($v['product_price']),
+                                'APQD_STATUS'       => 1,
+                                'APQD_CREATE_BY'    => $emp_id
+                            );
+                            $this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION_DETAILS', $dataDetail);
+                        }
+                        $this->db->trans_commit();
+                        $this->response(
+                            array(
+                                "status"    => "SUCCESS",
+                                "message"   => "บันทึกข้อมูลสำเร็จ",
+                                "data"      => $quotationId
+                            ), 200
+                        );
+                    } else {
+                        $this->db->trans_rollback();
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถสร้างใบเสนอราคาได้",
+                                "data"      => ""
+                            ), 200
+                        );
+                    }
                 }
-                $this->db->trans_commit();
-                $this->response(
-                    array(
-                        "status"    => "SUCCESS",
-                        "message"   => "บันทึกข้อมูลสำเร็จ",
-                        "data"      => $quotationId
-                    ), 200
-                );
             } else {
-                $this->db->trans_rollback();
-                $this->response(
-                    array(
-                        "status"    => "FAILED",
-                        "message"   => "ไม่สามารถสร้างใบเสนอราคาได้",
-                        "data"      => ""
-                    ), 200
+                $quotationId = $this->generateQuotationNumber();
+                $dataQuotation = array(
+                    'APQ_ID'                => $quotationId,
+                    'APCUS_ID'              => $customer_id,
+                    'APQ_DATE'              => date('Y-m-d'),
+                    'APQ_EXPIRE_DATE'       => date("Y-m-d"),
+                    'APQ_EMP_ID'            => $emp_id,
+                    'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
+                    'APQ_PROJECTNAME'       => $project_name,
+                    'APQ_PROMOTION_TEXT'    => $promotion_text,
+                    'APQ_DISCOUNT'          => floatval($discount),
+                    'APQ_TOTAL'             => floatval($total),
+                    'APQ_GRAND_TOTAL'       => floatval($grand_total),
+                    'APQ_STATUS'            => 0,
+                    'APQ_CREATE_BY'         => $emp_id,
+                    'APQ_PAYMENT_TYPE'      => $payType,
+                    'APQ_TRANSPORT'         => floatval($transport)
                 );
+                if ($this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
+                    foreach($product as $k => $v) {
+                        $dataDetail = array(
+                            'APQ_ID'            => $quotationId,
+                            'APQD_PROD_ID'      => $v['product_id'],
+                            'APQD_PROD_QTY'     => $v['product_qty'],
+                            'APQD_UNIT_PRICE'   => floatval($v['product_price']),
+                            'APQD_STATUS'       => 1,
+                            'APQD_CREATE_BY'    => $emp_id
+                        );
+                        $this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION_DETAILS', $dataDetail);
+                    }
+                    $this->db->trans_commit();
+                    $this->response(
+                        array(
+                            "status"    => "SUCCESS",
+                            "message"   => "บันทึกข้อมูลสำเร็จ",
+                            "data"      => $quotationId
+                        ), 200
+                    );
+                } else {
+                    $this->db->trans_rollback();
+                    $this->response(
+                        array(
+                            "status"    => "FAILED",
+                            "message"   => "ไม่สามารถสร้างใบเสนอราคาได้",
+                            "data"      => ""
+                        ), 200
+                    );
+                }
             }
         } else {
             $this->db->trans_rollback();
@@ -101,17 +217,27 @@ class AddProductToQuotation extends REST_Controller
     }
 
     public function generateQuotationNumber() {
-        $sqlCheck   = "SELECT CONCAT(RIGHT(year(GETDATE()), 2), RIGHT('0' + RTRIM(MONTH(GETDATE())), 2), RIGHT('0000' + CONVERT(VARCHAR, CONVERT(INTEGER, SUBSTRING(MAX(APQ_ID), 5, 5) + 1)), 5)) AS APQ_ID  
-                        FROM TSR_DB1.dbo.ALPINE_QUOTATION";
-        $stmtCheck  = $this->db->query($sqlCheck);
-        $running    = $stmtCheck->row()->APQ_ID;
-        if ($running != "") {
+        if ($this->checkHasQuotation()) {
+            $sqlCheck   = "SELECT CONCAT(RIGHT(year(GETDATE()), 2), RIGHT('0' + RTRIM(MONTH(GETDATE())), 2), RIGHT('0000' + CONVERT(VARCHAR, CONVERT(INTEGER, SUBSTRING(MAX(APQ_ID), 5, 5) + 1)), 5)) AS APQ_ID  
+                            FROM TSR_DB1.dbo.ALPINE_QUOTATION";
+            $stmtCheck  = $this->db->query($sqlCheck);
+            $running    = $stmtCheck->row()->APQ_ID;
             return $running;
         } else {
             $sql = "SELECT CONCAT(RIGHT(year(GETDATE()), 2), RIGHT('0' + RTRIM(MONTH(GETDATE())), 2), '00001') AS Running";
             $stmtCheck  = $this->db->query($sql);
             $running    = $stmtCheck->row()->Running;
             return $running;
+        }
+    }
+
+    public function checkHasQuotation() {
+        $sql = "SELECT * FROM TSR_DB1.dbo.ALPINE_QUOTATION";
+        $stmt = $this->db->query($sql);
+        if ($stmt->num_rows() > 0) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -124,5 +250,11 @@ class AddProductToQuotation extends REST_Controller
         } else {
             return "";
         }
+    }
+
+    public function deleteProduct($quotationId) {
+        $this->db->where('APQ_ID', $quotationId);
+        $this->db->delete('TSR_DB1.dbo.ALPINE_QUOTATION_DETAILS');
+
     }
 }

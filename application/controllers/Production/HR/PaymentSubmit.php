@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class PaymentSubmit extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -32,88 +32,128 @@ class PaymentSubmit extends REST_Controller
         $paymentUrl     = "";
         $signatureUrl   = "";
 
-        if (isset($_FILES['paymentimg']['tmp_name'])) {
-            $ftp = ftp_connect('ftp.thiensurat.com');
-            if ($ftp) {
-                $f = ftp_login($ftp, 'fileshare01@thiensurat.com', 'CX8Q2Z7wO');
-                if ($f) {
-                    ftp_pasv($ftp, true);
-                    $num_files = count($_FILES['paymentimg']['tmp_name']);
-                    for($i = 0; $i < $num_files; $i++) {
+        if (!$this->checkPayment($detailId, $citizen)) {
+
+            if (isset($_FILES['paymentimg']['tmp_name'])) {
+                $ftp = ftp_connect('ftp.thiensurat.com');
+                if ($ftp) {
+                    $f = ftp_login($ftp, 'fileshare01@thiensurat.com', 'CX8Q2Z7wO');
+                    if ($f) {
+                        ftp_pasv($ftp, true);
+                        $num_files = count($_FILES['paymentimg']['tmp_name']);
+                        for($i = 0; $i < $num_files; $i++) {
+                            $image_name     = $detailId . "_" . date('YmdHis');
+                            $image_dest     = "/HR/SaleCheckIn/payment/pay/" . $image_name . ".jpg";
+                            $image          = $_FILES['paymentimg']['tmp_name'][$i];
+                            $fupload        = ftp_put($ftp, $image_dest, $image, FTP_BINARY);
+                            $paymentUrl     = $this->img_url . $image_dest;
+                        }
+                    } else {
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถเชื่อมต่อ FTP ได้",
+                                "data"      => $this->input->post()
+                            ), 200
+                        );
+                        exit();
+                    }
+                }
+            }
+
+            if ($signimg != "") {
+                $ftp = ftp_connect('ftp.thiensurat.com');
+                if ($ftp) {
+                    $f = ftp_login($ftp, 'fileshare01@thiensurat.com', 'CX8Q2Z7wO');
+                    if ($f) {
+                        ftp_pasv($ftp, true);
                         $image_name     = $detailId . "_" . date('YmdHis');
-                        $image_dest     = "/HR/SaleCheckIn/payment/pay/" . $image_name . ".jpg";
-                        $image          = $_FILES['paymentimg']['tmp_name'][$i];
-                        $fupload        = ftp_put($ftp, $image_dest, $image, FTP_BINARY);
-                        $paymentUrl     = $this->img_url . $image_dest;
+                        $image_dest     = "/HR/SaleCheckIn/payment/sign/" . $image_name . ".jpg";
+                        $image          = base64_decode($signimg);
+
+                        $file            = "uploads/signature" . $detailId . ".jpg";
+                        file_put_contents($file, $image);
+
+                        $fupload        = ftp_put($ftp, $image_dest, $file, FTP_BINARY);
+                        $signatureUrl   = $this->img_url . $image_dest;
+                    } else {
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถเชื่อมต่อ FTP ได้",
+                                "data"      => $this->input->post()
+                            ), 200
+                        );
+                        exit();
+                    }
+                }
+            }
+
+            $data = array(
+                'DetailID'          => $detailId,
+                'EmpID'             => $empId,
+                'EmpName'           => $empName,
+                'SaleCode'          => $saleCode,
+                'CitizenID'         => $citizen,
+                'Latitude'          => $lat,
+                'Longitude'         => $lon,
+                'PaymentTime'       => $date,
+                'PaymentAmount'     => $paymentAmount,
+                'PaymentImage'      => $paymentUrl,
+                'PaymentSignature'  => $signatureUrl,
+                'CreateDate'        => $date,
+                'CreateBy'          => $createby,
+            );
+
+            if ($paymentType == "100") {
+                $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work100_Payment', $data);
+                if ($stmt) {
+                    if ($this->updatePayment100Detail($detailId, $empId, $paymentAmount)) {
+                        $this->response(
+                            array(
+                                "status"    => "SUCCESS",
+                                "message"   => "บันทึกการชำระเงินแล้ว",
+                                "data"      => ""
+                            ), 200
+                        );
+                    } else {
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
+                                "data"      => ""
+                            ), 200
+                        );
                     }
                 } else {
                     $this->response(
                         array(
                             "status"    => "FAILED",
-                            "message"   => "ไม่สามารถเชื่อมต่อ FTP ได้",
-                            "data"      => $this->input->post()
-                        ), 200
-                    );
-                    exit();
-                }
-            }
-        }
-
-        if ($signimg != "") {
-            $ftp = ftp_connect('ftp.thiensurat.com');
-            if ($ftp) {
-                $f = ftp_login($ftp, 'fileshare01@thiensurat.com', 'CX8Q2Z7wO');
-                if ($f) {
-                    ftp_pasv($ftp, true);
-                    $image_name     = $detailId . "_" . date('YmdHis');
-                    $image_dest     = "/HR/SaleCheckIn/payment/sign/" . $image_name . ".jpg";
-                    $image          = base64_decode($signimg);
-
-                    $file            = "uploads/signature" . $detailId . ".jpg";
-                    file_put_contents($file, $image);
-
-                    $fupload        = ftp_put($ftp, $image_dest, $file, FTP_BINARY);
-                    $signatureUrl   = $this->img_url . $image_dest;
-                } else {
-                    $this->response(
-                        array(
-                            "status"    => "FAILED",
-                            "message"   => "ไม่สามารถเชื่อมต่อ FTP ได้",
-                            "data"      => $this->input->post()
-                        ), 200
-                    );
-                    exit();
-                }
-            }
-        }
-
-        $data = array(
-            'DetailID'          => $detailId,
-            'EmpID'             => $empId,
-            'EmpName'           => $empName,
-            'SaleCode'          => $saleCode,
-            'CitizenID'         => $citizen,
-            'Latitude'          => $lat,
-            'Longitude'         => $lon,
-            'PaymentTime'       => $date,
-            'PaymentAmount'     => $paymentAmount,
-            'PaymentImage'      => $paymentUrl,
-            'PaymentSignature'  => $signatureUrl,
-            'CreateDate'        => $date,
-            'CreateBy'          => $createby,
-        );
-
-        if ($paymentType == "100") {
-            $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work100_Payment', $data);
-            if ($stmt) {
-                if ($this->updatePayment100Detail($detailId, $empId, $paymentAmount)) {
-                    $this->response(
-                        array(
-                            "status"    => "SUCCESS",
-                            "message"   => "บันทึกการชำระเงินแล้ว",
+                            "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
                             "data"      => ""
                         ), 200
                     );
+                }
+            } else {
+                $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work_Payment', $data);
+                if ($stmt) {
+                    if ($this->updatePaymentDetail($detailId, $empId, $paymentAmount)) {
+                        $this->response(
+                            array(
+                                "status"    => "SUCCESS",
+                                "message"   => "บันทึกการจ่ายเงินแล้ว",
+                                "data"      => ""
+                            ), 200
+                        );
+                    } else {
+                        $this->response(
+                            array(
+                                "status"    => "FAILED",
+                                "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
+                                "data"      => ""
+                            ), 200
+                        );
+                    }
                 } else {
                     $this->response(
                         array(
@@ -123,44 +163,26 @@ class PaymentSubmit extends REST_Controller
                         ), 200
                     );
                 }
-            } else {
-                $this->response(
-                    array(
-                        "status"    => "FAILED",
-                        "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
-                        "data"      => ""
-                    ), 200
-                );
             }
         } else {
-            $stmt = $this->db->insert('TSR_DB1.dbo.SaleTeam_Work_Payment', $data);
-            if ($stmt) {
-                if ($this->updatePaymentDetail($detailId, $empId, $paymentAmount)) {
-                    $this->response(
-                        array(
-                            "status"    => "SUCCESS",
-                            "message"   => "บันทึกการจ่ายเงินแล้ว",
-                            "data"      => ""
-                        ), 200
-                    );
-                } else {
-                    $this->response(
-                        array(
-                            "status"    => "FAILED",
-                            "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
-                            "data"      => ""
-                        ), 200
-                    );
-                }
-            } else {
-                $this->response(
-                    array(
-                        "status"    => "FAILED",
-                        "message"   => "ไม่สามารถบันทึกข้อมูลได้ กรุณาติดต่อ IT",
-                        "data"      => ""
-                    ), 200
-                );
-            }
+            $this->response(
+                array(
+                    "status"    => "SUCCESS",
+                    "message"   => "คุณบันทึกการจ่ายเงินแล้วไปแล้ว",
+                    "data"      => ""
+                ), 200
+            );
+        }
+    }
+
+    public function checkPayment($detailId, $citizen) {
+        $sql = "SELECT TOP 1 * FROM TSR_DB1.dbo.SaleTeam_Work_Payment WHERE DetailID = ? AND CitizenID = ?
+                AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105) ORDER BY CreateDate DESC";
+        $stmt = $this->db->query($sql, array($detailId, $citizen));
+        if ($stmt->num_rows() > 0) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -175,10 +197,10 @@ class PaymentSubmit extends REST_Controller
     }
 
     public function updatePayment100Detail($detailId, $empId, $amount) {
-        $sql = "UPDATE TSR_DB1.dbo.SaleTeam_Work100_Detail SET 
+        $sql = "UPDATE TSR_DB1.dbo.SaleTeam_Work100_Detail SET
                 PaymentAmount = (
                     SELECT (PaymentAmount - $amount) FROM TSR_DB1.dbo.SaleTeam_Work100_Payment WHERE DetailID = ? AND EmpID = ?
-                ), 
+                ),
                 PaymentBalance = (
                     SELECT SUM(PaymentAmount) FROM TSR_DB1.dbo.SaleTeam_Work100_Payment WHERE DetailID = ? AND EmpID = ?
                 ), PaymentStatus = 1 WHERE DetailID = ?";

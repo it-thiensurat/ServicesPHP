@@ -14,8 +14,8 @@ class GetTeamCheck extends REST_Controller
     public function index_post() {
         $teamcode   = $this->input->post('teamcode');
         $depid      = $this->input->post('depid');
-        $fnyear     = $this->input->post('fnyear');
-        $fnno       = $this->input->post('fnno');
+        $fnno       = $this->getFnNo($depid);
+        $fnyear     = $this->getFnYear($depid);
         $sql = "SELECT TeamID,TeamCode,FnYear,FnNo,DepID,LeadCheckTime,LeadCheckNum,LeadCheckWorkNum,LeadCheckOutNum,EmpID
                 FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work
                 WHERE TeamCode = ? AND DepID = ? AND FnYear = ? AND FnNo = ?
@@ -37,7 +37,7 @@ class GetTeamCheck extends REST_Controller
                     'LeadCheckOutNum'   => $v["LeadCheckOutNum"],
                     'EmpID'             => $v["EmpID"],
                     'CostBranch'        => $this->getCostBranch(),
-                    'WorkDetail'        => $this->getWorkDetail($v["TeamID"])
+                    'WorkDetail'        => $this->getWorkDetail($v["FnNo"], $v["FnYear"], $v["DepID"], $v["TeamID"])
                 );
 
                 array_push($data, $r);
@@ -62,23 +62,50 @@ class GetTeamCheck extends REST_Controller
         }
     }
 
-    public function getWorkDetail($teamid) {
-        $sql = "SELECT DetailID, TeamID, EmpID, EmpName, SaleCode, LeadCheckTime,
-                CitizenID, CONVERT(varchar(10), PaymentAmount) AS PayAmount,
-                -- CASE
-                -- 	WHEN SupCheckTime IS NULL THEN LeadApproveStatus
-                -- 	ELSE SupApproveStatus
-                -- END  AS LeadApproveStatus,
-                LeadApproveStatus,
-                Image,
-                REPLACE(EmpID,'A','0') AS EmpImage,
+    public function getFnNo($depid) {
+        $sql = "SELECT TOP 1 Fortnight_no FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_no;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getFnYear($depid) {
+        $sql = "SELECT TOP 1 Fortnight_year FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_year;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getWorkDetail($fno, $fyear, $dep, $teamid) {
+        $sql = "SELECT wd.DetailID, wd.TeamID, wd.EmpID, wd.EmpName, wd.SaleCode, wd.LeadCheckTime,
+                wd.CitizenID, CONVERT(varchar(10), wd.PaymentAmount) AS PayAmount,
+                wd.LeadApproveStatus,
                 CASE
-                	WHEN SupCheckTime IS NULL THEN LeadApproveStatus
-                	ELSE SupApproveStatus
-                END  AS SwitchStatus
-                FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail
-                WHERE TeamID = ?";
-        $stmt = $this->db->query($sql, array($teamid));
+                  WHEN wd.SaleCode IS NULL THEN 0
+                  ELSE
+                	(CASE WHEN DATEDIFF(dd,DATEADD(dd,-1,sl.StartDate),GETDATE()) >= 31 THEN 1 ELSE (CASE WHEN sl.saleempType = 1 THEN 0 ELSE 1 END) END)
+                END AS saletype,
+                wd.Image,
+                REPLACE(wd.EmpID,'A','0') AS EmpImage,
+                CASE
+                  WHEN wd.SupCheckTime IS NULL THEN wd.LeadApproveStatus
+                	ELSE wd.SupApproveStatus
+                END AS SwitchStatus
+                FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS wd
+                LEFT JOIN TSR_Application.dbo.NPT_Sale_Log AS sl ON sl.FnNo = ? AND sl.FnYear = ? AND sl.DepID = ? AND sl.SaleCode = wd.SaleCode
+                          AND sl.SaleStatus IN ('N', 'P','D') AND sl.PositID NOT IN ('65','85') AND sl.PosID < 3
+                WHERE wd.TeamID = ? ORDER BY wd.DetailID";
+        $stmt = $this->db->query($sql, array($fno, $fyear, $dep, $teamid));
         if ($stmt->num_rows() > 0) {
             return $stmt->result_array();
         } else {

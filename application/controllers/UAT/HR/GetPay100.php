@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class GetPay100 extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -87,7 +87,7 @@ class GetPay100 extends REST_Controller
 
     public function getPay() {
         $date = date('d-m-Y');
-        $sql = "SELECT CONVERT(varchar, LockDate, 105), IsActive FROM SQLUAT.TSR_Application.dbo.CostBranch_LockData_100 
+        $sql = "SELECT CONVERT(varchar, LockDate, 105), IsActive FROM SQLUAT.TSR_Application.dbo.CostBranch_LockData_100
                 WHERE CONVERT(varchar, LockDate, 105) = ? AND IsActive = 1";
         $stmt = $this->db->query($sql, array($date));
         if ($stmt->num_rows() > 0) {

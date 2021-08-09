@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class LeadSubmit extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -25,7 +25,7 @@ class LeadSubmit extends REST_Controller
 
         $sql    = "UPDATE SQLUAT.TSR_DB1.dbo.SaleTeam_Work SET LeadCheckNum = (
                         SELECT COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
-                        LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID 
+                        LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID
                         WHERE sw.TeamID = '" . $teamid . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . "
                     ), LeadCheckWorkNum = (
                         SELECT COUNT(stwd.TeamID) AS approve FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
@@ -34,7 +34,7 @@ class LeadSubmit extends REST_Controller
                     ), LeadCheckOutNum = (
                         SELECT COUNT(stwd.TeamID) AS unapprove FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
                         INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.LeadApproveStatus = 0
-                        WHERE sw.TeamID = '" . $teamid . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . " 
+                        WHERE sw.TeamID = '" . $teamid . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . "
                     ), LeadCheckTime = ?, LeadApproveStatus = ?, Latitude = ?, Longitude = ?, UpdateDate = ?, UpdateBy = ?
                      WHERE TeamID = ? AND FnYear = ? AND FnNo = ? AND DepID = ? AND CONVERT(VARCHAR(10),CreateDate,126) = CONVERT(VARCHAR(10),GETDATE(),126)";
         $stmt   = $this->db->query($sql, array($date, 1, $lat, $lon, $date, $empId, $teamid, $fnyear, $fnno, $depid));

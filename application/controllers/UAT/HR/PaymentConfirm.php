@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class PaymentConfirm extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -23,7 +23,7 @@ class PaymentConfirm extends REST_Controller
         if ($paymentType == "100") {
             $sql = "UPDATE SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 SET PaymentCheckNum = (
                         SELECT COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 AS sw
-                        LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail AS stwd ON sw.TeamID = stwd.TeamID 
+                        LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail AS stwd ON sw.TeamID = stwd.TeamID
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
                     ), PaymentApproveNum = (
                         SELECT COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 AS sw
@@ -35,7 +35,7 @@ class PaymentConfirm extends REST_Controller
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
                     ), PaymentAmount = (
                         SELECT SUM(stwd.PaymentAmount) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 AS sw
-                        INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.PaymentStatus = 1 AND stwd.SupApproveStatus = 1
+                        INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.SupApproveStatus = 1
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
                     ), PaymentBalance = (
                         SELECT SUM(stwd.PaymentBalance) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 AS sw
@@ -57,15 +57,11 @@ class PaymentConfirm extends REST_Controller
                         SELECT COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
                         INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.PaymentStatus = 0 AND stwd.SupApproveStatus = 1
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
-                    ), PaymentAmount = ((
+                    ), PaymentAmount = (
                         SELECT SUM(stwd.PaymentAmount) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
-                        INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.PaymentStatus = 1 AND stwd.SupApproveStatus = 1
+                        INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.SupApproveStatus = 1
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
-                    ) + (
-                        SELECT 200 * COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
-                        INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.PaymentStatus = 0 AND stwd.SupApproveStatus = 1
-                        WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "
-                    )), PaymentBalance = (
+                    ), PaymentBalance = (
                         SELECT SUM(stwd.PaymentBalance) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
                         INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.PaymentStatus = 1 AND stwd.SupApproveStatus = 1
                         WHERE sw.TeamID = " . $teamId . " AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depId . "

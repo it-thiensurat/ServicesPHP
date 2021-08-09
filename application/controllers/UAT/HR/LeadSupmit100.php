@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class LeadSupmit100 extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -31,7 +31,7 @@ class LeadSupmit100 extends REST_Controller
             // );
 
             // $this->db->where('DetailID', $v['detailId']);
-            // $this->db->update('SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail', $data);
+            // $this->db->update('TSR_DB1.dbo.SaleTeam_Work100_Detail', $data);
             if ($v["SwitchStatus"] == 0 && $v["CauseStatus"] == 0) {
                 $this->response(
                     array(

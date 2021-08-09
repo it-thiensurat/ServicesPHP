@@ -14,8 +14,8 @@ class GetTeamPay extends REST_Controller
     public function index_post() {
         $teamcode   = $this->input->post('teamcode');
         $depid      = $this->input->post('depid');
-        $fnyear     = $this->input->post('fnyear');
-        $fnno       = $this->input->post('fnno');
+        $fnno       = $this->getFnNo($depid);
+        $fnyear     = $this->getFnYear($depid);
         if ($this->getCostBranch() == 1) {
             $sql = "SELECT TeamID,TeamCode,FnYear,FnNo,DepID,LeadCheckTime,LeadCheckNum,LeadCheckWorkNum,LeadCheckOutNum,EmpID
                     FROM TSR_DB1.dbo.SaleTeam_Work
@@ -37,7 +37,7 @@ class GetTeamPay extends REST_Controller
                         'LeadCheckWorkNum'  => $v["LeadCheckWorkNum"],
                         'LeadCheckOutNum'   => $v["LeadCheckOutNum"],
                         'EmpID'             => $v["EmpID"],
-                        'WorkDetail'        => $this->getWorkDetail($v["TeamID"], $v["EmpID"])
+                        'WorkDetail'        => $this->getWorkDetail($v["FnNo"], $v["FnYear"], $v["DepID"], $v["TeamID"])
                     );
 
                     array_push($data, $r);
@@ -70,32 +70,56 @@ class GetTeamPay extends REST_Controller
         }
     }
 
-    public function getWorkDetail($teamid, $empid) {
-        // $sql = "SELECT swd.DetailID, swd.TeamID, swd.EmpID, swd.EmpName, swd.SaleCode, swd.SupCheckTime, swd.CitizenID,
-        //         swd.SupApproveStatus, swd.Image, swd.PaymentStatus, swp.PaymentImage,
-        //         CONVERT(varchar, (200 - swd.PaymentBalance)) AS PaymentAmount,
-        //         CONVERT(varchar, swd.PaymentBalance) AS PaymentBalance
-        //         FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS swd
-        //         LEFT JOIN (
-        //             SELECT TOP 1 stwd.DetailID, stwd.EmpID, ISNULL(stwp.PaymentImage, '') AS PaymentImage
-        //             FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd
-        //             LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Payment AS stwp ON stwd.DetailID = stwp.DetailID AND stwp.EmpID = '" . $empid . "'
-        //             WHERE stwd.TeamID = " . $teamid . " ORDER BY stwp.PaymentID DESC
-        //         ) AS swp ON swp.DetailID = swd.DetailID AND swp.EmpID = '" . $empid . "'
-        //         WHERE swd.TeamID = " . $teamid . " AND swd.SupApproveStatus = 1";
+    public function getFnNo($depid) {
+        $sql = "SELECT TOP 1 Fortnight_no FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_no;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getFnYear($depid) {
+        $sql = "SELECT TOP 1 Fortnight_year FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
+                WHERE DepID = ?
+                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
+        $stmt = $this->db->query($sql, array($depid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->row()->Fortnight_year;
+        } else {
+            return 0;
+        }
+    }
+
+    public function getWorkDetail($fno, $fyear, $dep, $teamid) {
         $sql = "SELECT swd.DetailID, swd.TeamID, swd.EmpID, swd.EmpName, swd.SaleCode, swd.SupCheckTime, swd.CitizenID,
                     swd.SupApproveStatus, swd.Image, swd.PaymentStatus,
                     CONVERT(varchar, PaymentAmount) AS PaymentAmount,
                     CONVERT(varchar, swd.PaymentBalance) AS PaymentBalance,
+                    CASE
+                       WHEN swd.SaleCode IS NULL THEN 0
+                       ELSE
+                    	(CASE WHEN DATEDIFF(dd,DATEADD(dd,-1,sl.StartDate),GETDATE()) >= 31 THEN 1 ELSE (CASE WHEN sl.saleempType = 1 THEN 0 ELSE 1 END) END)
+                    END AS saletype,
+                    CASE
+                      WHEN swd.SaleCode IS NULL THEN NULL
+                      ELSE
+                    	DATEADD(day,31,sl.StartDate)
+                    END AS TurnproDate,
                     (
                         SELECT TOP 1 stwp.PaymentImage
                         FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd
-                        LEFT JOIN TSR_DB1.dbo.SaleTeam_Work_Payment AS stwp ON stwd.DetailID = stwp.DetailID AND stwp.EmpID = swd.EmpID
-                        WHERE stwd.TeamID = $teamid ORDER BY stwp.PaymentID DESC
+                        LEFT JOIN TSR_DB1.dbo.SaleTeam_Work_Payment AS stwp ON stwd.DetailID = stwp.DetailID AND stwp.CitizenID = swd.CitizenID
+                        WHERE stwd.TeamID = ? ORDER BY stwp.PaymentID DESC
                     ) AS PaymentImage
                 FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS swd
-                WHERE swd.TeamID = $teamid AND swd.SupApproveStatus = 1";
-        $stmt = $this->db->query($sql);
+                LEFT JOIN TSR_Application.dbo.NPT_Sale_Log AS sl ON sl.FnNo = ? AND sl.FnYear = ? AND sl.DepID = ? AND sl.SaleCode = swd.SaleCode
+                          AND sl.SaleStatus IN ('N', 'P','D') AND sl.PositID NOT IN ('65','85') AND sl.PosID < 3
+                WHERE swd.TeamID = ? AND swd.SupApproveStatus = 1 ORDER BY swd.DetailID";
+        $stmt = $this->db->query($sql, array($teamid, $fno, $fyear, $dep, $teamid));
         if ($stmt->num_rows() > 0) {
             $data = [];
             foreach($stmt->result_array() as $k => $v) {
@@ -107,6 +131,8 @@ class GetTeamPay extends REST_Controller
                     'SaleCode'          => $v['SaleCode'],
                     'SupCheckTime'      => $v['SupCheckTime'],
                     'CitizenID'         => $v['CitizenID'],
+                    'saletype'          => $v['saletype'],
+                    'TurnproDate'       => $v['TurnproDate'],
                     'SupApproveStatus'  => $v['SupApproveStatus'],
                     'Image'             => $v['PaymentStatus'] == 0 ? str_replace('A','0',$v['EmpID']) : $v['PaymentImage'],
                     'PaymentAmount'     => $v['PaymentAmount'],

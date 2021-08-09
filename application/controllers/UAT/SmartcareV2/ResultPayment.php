@@ -123,7 +123,7 @@ class ResultPayment extends REST_Controller
             'date_modify'           => date("Y-m-d h:i:sa"),
         );
 
-        $this->db->insert('SQLUAT.TSR_DB1.dbo.2C2P_SANDBOX_RESPONSE', $data);
+        $this->db->insert('TSR_DB1.dbo.2C2P_SANDBOX_RESPONSE', $data);
 
 
         $checkHashStr = $version . $request_timestamp . $merchant_id . $order_id . 
@@ -246,13 +246,20 @@ class ResultPayment extends REST_Controller
     public function updatePayment($contno, $refno, $amount, $datetransfer, $paydate) {
         $sql = "exec TSRData_Source.[dbo].SP_TSSM_CreateReceiptTransfer 
                     @Empid = 'X00033',
-                    @Contno = 80402233,
+                    @Contno = ?,
                     @ContractReferenceNo = ?,
-                    @PayTran = 1480,
-                    @Ways = '2C2P',
+                    @PayTran = ?,
+                    @Ways = ?,
                     @DateTransfer = ?";
+        // $sql = "exec TSRData_Source.[dbo].SP_TSSM_CreateReceiptTransfer 
+        //             @Empid = 'X00033',
+        //             @Contno = '80003532',
+        //             @ContractReferenceNo = '630050254',
+        //             @PayTran = 1480,
+        //             @Ways = 'TEST',
+        //             @DateTransfer = GETDATE()";
                     // @PayDate = ?";
-        // $this->db->query($sql, array($contno, $refno, $amount, $datetransfer));
-        $this->db->query($sql, array($refno, $datetransfer));
+        $this->db->query($sql, array($contno, $refno, $amount, $datetransfer));
+        // print_r($this->db->query($sql));
     }
 }

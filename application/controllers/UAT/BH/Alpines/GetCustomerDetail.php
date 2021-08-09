@@ -16,7 +16,7 @@ class GetCustomerDetail extends REST_Controller
 
     public function index_post() {
         $customerId  = $this->input->post('customerId');
-        $sql = "SELECT TOP 1 * FROM SQLUAT.TSR_DB1.dbo.ALPINE_QUOTATION WHERE APCUS_ID = ? ORDER BY APO_ID DESC";
+        $sql = "SELECT TOP 1 * FROM SQLUAT.TSR_DB1.dbo.ALPINE_QUOTATION WHERE APCUS_ID = ? ORDER BY APQ_ID DESC";
         $stmt = $this->db->query($sql, array($customerId));
         
         if ($stmt->num_rows() > 0) {
@@ -31,7 +31,7 @@ class GetCustomerDetail extends REST_Controller
             $this->response(
                 array(
                     "status"    => "SUCCESS",
-                    "message"   => "รายบะเอียด",
+                    "message"   => "รายละเอียด",
                     "data"      => $data
                 ), 200
             );

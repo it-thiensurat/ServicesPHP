@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/CreatorJwt.php');
 require(APPPATH.'libraries/Format.php');
-class GetRegister extends REST_Controller { 
+class GetRegister extends REST_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->database();
@@ -79,8 +79,8 @@ class GetRegister extends REST_Controller {
 
         $sql   = "SELECT rm.RecruitmentId, rm.Title, rm.Firstname, rm.Lastname, rm.CitizenId, rm.BirthDate, CASE WHEN rm.Gender = '1' THEN 'M' ELSE 'F' END AS Gender,
                     rm.Mobile, rm.Picture, rm.LocationName, rm.Province, rm.District, rm.SubDistrict, rm.Postcode, rm.CompanyCode, cm.CompanyTh, rm.PositionName, rm.RecruitmentDate
-                    FROM TSR_DB1.dbo.RECRUITMENT_MASTER AS rm 
-                    LEFT JOIN TSR_DB1.dbo.COMPANY_MASTER AS cm ON rm.CompanyCode = cm.CompanyCode
+                    FROM SQLUAT.TSR_DB1.dbo.RECRUITMENT_MASTER AS rm
+                    LEFT JOIN SQLUAT.TSR_DB1.dbo.COMPANY_MASTER AS cm ON rm.CompanyCode = cm.CompanyCode
                     WHERE rm.AdviserId = ? AND LEFT(CONVERT(varchar, rm.RecruitmentDate,112),6) = ?";
         $stmt   = $this->db->query($sql, array($empId, $dateReport));
         if ($stmt->num_rows() > 0) {
@@ -106,7 +106,7 @@ class GetRegister extends REST_Controller {
     }
 
     public function getAll($empId) {
-        $sql    = "SELECT COUNT(rm.RecruitmentId) AS num FROM TSR_DB1.dbo.RECRUITMENT_MASTER AS rm WHERE rm.AdviserId = ?";
+        $sql    = "SELECT COUNT(rm.RecruitmentId) AS num FROM SQLUAT.TSR_DB1.dbo.RECRUITMENT_MASTER AS rm WHERE rm.AdviserId = ?";
         $stmt   = $this->db->query($sql, array($empId));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->num;

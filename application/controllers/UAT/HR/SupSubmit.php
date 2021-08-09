@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class SupSubmit extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -14,6 +14,8 @@ class SupSubmit extends REST_Controller
     public function index_post() {
         $empId          = $this->input->post('empid');
         $team_check     = json_decode($this->input->post('teamcheck'), true);
+        $lat            = $this->input->post('latitude');
+        $lon            = $this->input->post('longitude');
         $date           = date('Y-m-d H:i:s');
         $approve_status = 1;
         $WorkDetail     = [];
@@ -40,7 +42,7 @@ class SupSubmit extends REST_Controller
             if ($this->db->affected_rows() > 0) {
                 $sql = "UPDATE SQLUAT.TSR_DB1.dbo.SaleTeam_Work SET SupCheckNum = (
                             SELECT COUNT(stwd.TeamID) AS total FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
-                            LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID 
+                            LEFT JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID
                             WHERE sw.TeamID = '" . $teamId . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . "
                         ), SupCheckWorkNum = (
                             SELECT COUNT(stwd.TeamID) AS approve FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
@@ -49,10 +51,10 @@ class SupSubmit extends REST_Controller
                         ), SupCheckOutNum = (
                             SELECT COUNT(stwd.TeamID) AS unapprove FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work AS sw
                             INNER JOIN SQLUAT.TSR_DB1.dbo.SaleTeam_Work_Detail AS stwd ON sw.TeamID = stwd.TeamID AND stwd.SupApproveStatus = 0
-                            WHERE sw.TeamID = '" . $teamId . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . " 
-                        ), SupCheckTime = ?, SupApproveStatus = ?, UpdateDate = ?, UpdateBy = ?
+                            WHERE sw.TeamID = '" . $teamId . "' AND sw.FnNo = " . $fnno . " AND sw.FnYear = " . $fnyear . " AND sw.DepID = " . $depid . "
+                        ), SupCheckTime = ?, SupApproveStatus = ?, Latitude = ?, Longitude = ?, UpdateDate = ?, UpdateBy = ?
                         WHERE TeamID = ? AND FnYear = ? AND FnNo = ? AND DepID = ? AND CONVERT(VARCHAR(10),CreateDate,126) = CONVERT(VARCHAR(10),GETDATE(),126)";
-                $stmt   = $this->db->query($sql, array($date, $approve_status, $date, $empId, $teamId, $fnyear, $fnno, $depid));
+                $stmt   = $this->db->query($sql, array($date, $approve_status, $lat, $lon, $date, $empId, $teamId, $fnyear, $fnno, $depid));
                 if ($stmt) {
                     $this->response(
                         array(
@@ -107,7 +109,7 @@ class SupSubmit extends REST_Controller
                 $this->db->insert('SQLUAT.ZKTimeData.dbo.CHECKINOUT', $data);
             } else {
                 $userid = $this->cleanLetters($v['EmpID']);
-                $sql = "DELETE FROM SQLUAT.ZKTimeData.dbo.CHECKINOUT 
+                $sql = "DELETE FROM SQLUAT.ZKTimeData.dbo.CHECKINOUT
                         WHERE USERID = '" . $userid . "' AND CitizenId = '" . $v['CitizenID'] . "' AND empid = '" . $v['EmpID'] . "' AND SENSORID = '999' AND CONVERT(varchar, createdDate , 105) = CONVERT(varchar, GETDATE(), 105)";
                 $stmt = $this->db->query($sql);
             }

@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/Format.php');
 class GetLeadAllow100 extends REST_Controller
-{ 
+{
     public function __construct()
     {
         parent::__construct();
@@ -64,27 +64,27 @@ class GetLeadAllow100 extends REST_Controller
     }
 
     public function getWorkDetail($teamid) {
-        $sql = "SELECT swd.DetailID, swd.TeamID, swd.EmpID, swd.EmpName, swd.SaleCode, swd.LeadCheckTime, swd.SupCheckTime, 
+        $sql = "SELECT swd.DetailID, swd.TeamID, swd.EmpID, swd.EmpName, swd.SaleCode, swd.LeadCheckTime, swd.SupCheckTime,
                 swd.CitizenID, swd.FnYear, swd.FnNo, swd.LeadApproveStatus, swd.LeadCause, swd.SupCause,
-                CASE 
+                CASE
                 	WHEN swd.SupCheckTime IS NULL THEN swd.LeadApproveStatus
-                	ELSE swd.SupApproveStatus 
+                	ELSE swd.SupApproveStatus
                 END AS SwitchStatus,
-                cc.causeName, swd.PaymentAmount, swd.PaymentStatus, swd.PaymentBalance, swd.SupApproveStatus 
+                cc.causeName, swd.PaymentAmount, swd.PaymentStatus, swd.PaymentBalance, swd.SupApproveStatus
                 FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100_Detail AS swd
-                LEFT JOIN TSR_Application.dbo.CostBranch_CauseMaster AS cc ON swd.LeadCause = cc.id
+                LEFT JOIN SQLUAT.TSR_Application.dbo.CostBranch_CauseMaster AS cc ON swd.LeadCause = cc.id
                 WHERE swd.TeamID = ?";
         $stmt = $this->db->query($sql, array($teamid));
         if ($stmt) {
             $data = [];
             foreach($stmt->result_array() as $k => $v) {
                 $d = array(
-                    'DetailID'          => $v['DetailID'], 
-                    'TeamID'            => $v['TeamID'], 
-                    'EmpID'             => $v['EmpID'], 
-                    'EmpName'           => $v['EmpName'], 
-                    'SaleCode'          => $v['SaleCode'], 
-                    'LeadCheckTime'     => $v['LeadCheckTime'], 
+                    'DetailID'          => $v['DetailID'],
+                    'TeamID'            => $v['TeamID'],
+                    'EmpID'             => $v['EmpID'],
+                    'EmpName'           => $v['EmpName'],
+                    'SaleCode'          => $v['SaleCode'],
+                    'LeadCheckTime'     => $v['LeadCheckTime'],
                     'CitizenID'         => $v['CitizenID'],
                     'FnYear'            => $v['FnYear'],
                     'FnNo'              => $v['FnNo'],
@@ -108,7 +108,7 @@ class GetLeadAllow100 extends REST_Controller
     }
 
     public function getReason() {
-        $sql = "SELECT id, causeName FROM TSR_Application.[dbo].[CostBranch_CauseMaster]";
+        $sql = "SELECT id, causeName FROM SQLUAT.TSR_Application.dbo.CostBranch_CauseMaster";
         $stmt = $this->db->query($sql);
         if ($stmt) {
             return $stmt->result_array();
@@ -119,7 +119,7 @@ class GetLeadAllow100 extends REST_Controller
 
     public function getPay() {
         $date = date('d-m-Y');
-        $sql = "SELECT CONVERT(varchar, LockDate, 105), IsActive FROM SQLUAT.TSR_Application.dbo.CostBranch_LockData_100 
+        $sql = "SELECT CONVERT(varchar, LockDate, 105), IsActive FROM SQLUAT.TSR_Application.dbo.CostBranch_LockData_100
                 WHERE CONVERT(varchar, LockDate, 105) = ? AND IsActive = 1";
         $stmt = $this->db->query($sql, array($date));
         if ($stmt->num_rows() > 0) {
@@ -130,7 +130,7 @@ class GetLeadAllow100 extends REST_Controller
     }
 
     public function getApproveStatus($teamno, $depid, $fnno, $fnyear) {
-        $sql = "SELECT SupApproveStatus FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 WHERE TeamCode = ? AND DepID = ? AND FnNo = ? AND FnYear = ? 
+        $sql = "SELECT SupApproveStatus FROM SQLUAT.TSR_DB1.dbo.SaleTeam_Work100 WHERE TeamCode = ? AND DepID = ? AND FnNo = ? AND FnYear = ?
                 AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
         $stmt = $this->db->query($sql, array($teamno, $depid, $fnno, $fnyear));
         if ($stmt->num_rows() > 0) {

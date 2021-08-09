@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require(APPPATH.'libraries/REST_Controller.php');
 require(APPPATH.'libraries/CreatorJwt.php');
 require(APPPATH.'libraries/Format.php');
-class GetPeriod extends REST_Controller { 
+class GetPeriod extends REST_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->database();
@@ -67,7 +67,7 @@ class GetPeriod extends REST_Controller {
          * End
          */
 
-        $sql1    = "SELECT YEAR(rm.RecruitmentDate) as y FROM TSR_DB1.dbo.[RECRUITMENT_MASTER] AS rm 
+        $sql1    = "SELECT YEAR(rm.RecruitmentDate) as y FROM SQLUAT.TSR_DB1.dbo.[RECRUITMENT_MASTER] AS rm
                     WHERE rm.AdviserId = ? GROUP BY YEAR(rm.RecruitmentDate) ORDER BY YEAR(rm.RecruitmentDate) DESC";
         $stmt1   = $this->db->query($sql1, array($empId));
         if ($stmt1->num_rows() > 0) {

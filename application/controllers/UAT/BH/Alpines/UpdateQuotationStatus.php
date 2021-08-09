@@ -23,14 +23,28 @@ class UpdateQuotationStatus extends REST_Controller{
         $status                     = $this->input->post('status');
         $create_date                = date('Y-m-d H:i:s');
 
-        $data = array(
-            'APQ_EMP_APPROVE'   => $emp_id,
-            'APQ_DATE_APPROVE'  => date('Y-m-d'),
-            'APQ_STATUS'        => (int)$status,
-            'APQ_UPDATE_DATE'   => $create_date,
-            'APQ_UPDATE_BY'     => $emp_id,
-            'APQ_COMMENT'       => $comment,
-        );
+        if ($status == "2" || $status == 2) {
+            $time = strtotime($comment);
+            $newformat = date('Y-m-d',$time);
+
+            $data = array(
+                'APQ_EMP_APPROVE'   => $emp_id,
+                'APQ_DATE_APPROVE'  => date('Y-m-d'),
+                'APQ_STATUS'        => (int)$status,
+                'APQ_UPDATE_DATE'   => $create_date,
+                'APQ_UPDATE_BY'     => $emp_id,
+                'APQ_INSTALL_DATE'  => $newformat,
+            );
+        } else {
+            $data = array(
+                'APQ_EMP_APPROVE'   => $emp_id,
+                'APQ_DATE_APPROVE'  => date('Y-m-d'),
+                'APQ_STATUS'        => (int)$status,
+                'APQ_UPDATE_DATE'   => $create_date,
+                'APQ_UPDATE_BY'     => $emp_id,
+                'APQ_COMMENT'       => $comment,
+            );
+        }
 
         $this->db->where('APQ_ID', $quotationId);
         if ($this->db->update('TSR_DB1.dbo.ALPINE_QUOTATION', $data)) {

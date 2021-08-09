@@ -12,7 +12,83 @@ class CustomerSearch extends REST_Controller
     }
     
     public function index_get() {
-       echo phpinfo();
+    //    echo phpinfo();
+    $searchValue = $this->input->get('search');
+        $sql = "SELECT * FROM 
+				(
+					SELECT M.Refno, M.CONTNO, M.IDCard,	M.PrefixName, 
+					M.CustomerName, ISNULL(M.PayLastStatus, '') AS PayLastStatus, ISNULL(M.CustomerStatus, '') AS CustomerStatus, ISNULL(M.AccountStatus, '') AS AccountStatus, 
+					ISNULL(M.PayType, '') AS PayType, ISNULL(M.AllPeriods, '') AS AllPeriods, ISNULL(M.PayLastPeriod, '') AS PayLastPeriod, ISNULL(M.TotalPrice, '') AS TotalPrice, 
+					ISNULL(M.ProductName, '') AS ProductName, ISNULL(M.ProductModel, '') AS ProductModel, M.SaleCode, convert(varchar, M.EffDate, 103) AS EffDate,
+					ISNULL(M.AgingCumulative, '') AS AgingCumulative, ISNULL(M.AgingContinuous, '') AS AgingContinuous, ISNULL(A.AgingCumulativeDetail, '') AS AgingCumulativeDetail, 
+                    ISNULL(convert(varchar, M.StDate, 103), '') AS StDate, 
+                    DATEDIFF(year, M.EffDate, GETDATE()) AS df, 
+                    ISNULL(AD.TelHome, '') AS TelHome, ISNULL(AD.TelMobile, '') AS TelMobile
+					FROM TSR_Application.dbo.DebtorAnalyze_Master AS M
+					LEFT JOIN TSR_Application.dbo.DebtorAnalyze_AgingStatus AS A ON M.CustomerStatus = A.AgingCumulative AND M.AccountStatus = A.AgingContinuous
+                    LEFT JOIN TSR_Application.dbo.DebtorAnalyze_Address AS AD ON M.Refno = AD.Refno AND AD.AddressTypeCode = 'AddressIDCard'
+                    WHERE M.CustomerStatus IN ('T', 'R', 'N')
+				) AS MT 
+				WHERE MT.IDCard = ? OR MT.CustomerName LIKE '" . $searchValue . "%' OR MT.CustomerName LIKE '%" . $searchValue . "' OR REPLACE(MT.TelHome, '-', '') = ? OR REPLACE(MT.TelMobile, '-', '') = ? 
+                AND MT.df <= 10
+                ORDER BY MT.EffDate DESC";	
+        $stmt = $this->db->query($sql, array($searchValue, $searchValue, $searchValue));
+        if ($stmt->num_rows() > 0) {
+            // if ($stmt->row()->CustomerStatus == "T" || $stmt->row()->CustomerStatus == "R") {
+                $data = [];
+                foreach($stmt->result_array() as $k => $v){
+                    $d = array(
+                        'Refno'                 => $v["Refno"], 
+                        'CONTNO'                => $v["CONTNO"],  
+                        'IDCard'                => $v["IDCard"], 	
+                        'PrefixName'            => $v["PrefixName"],  
+                        'CustomerName'          => $v["CustomerName"],  
+                        'PayLastStatus'         => $v["PayLastStatus"],  
+                        'CustomerStatus'        => $v["CustomerStatus"],  
+                        'AccountStatus'         => $v["AccountStatus"],  
+                        'PayType'               => $v["PayType"],  
+                        'AllPeriods'            => $v["AllPeriods"],  
+                        'PayLastPeriod'         => $v["PayLastPeriod"],  
+                        'TotalPrice'            => $v["TotalPrice"],  
+                        'ProductName'           => $v["ProductName"],  
+                        'ProductModel'          => $v["ProductModel"],  
+                        'SaleCode'              => $v["SaleCode"],
+                        'EffDate'               => $v["EffDate"], 
+                        'AgingCumulative'       => $v["AgingCumulative"],  
+                        'AgingContinuous'       => $v["AgingContinuous"],  
+                        'AgingCumulativeDetail' => $v["AgingCumulativeDetail"],  
+                        'StDate'                => $v["StDate"], 
+                        'Address'               => $this->getCustomerAddress($v["Refno"])
+                    );
+
+                    array_push($data, $d);
+                }
+
+                $this->response(
+                    array(
+                        "status"    => "SUCCESS",
+                        "message"   => "ประวัติลูกค้า",
+                        "data"      => $data
+                    ), 200
+                );
+            // } else {
+            //     $this->response(
+            //         array(
+            //             "status"    => "FAILED",
+            //             "message"   => "ลูกค้าประวัติดี",
+            //             "data"      => ""
+            //         ), 200
+            //     );
+            // }
+        } else {
+            $this->response(
+                array(
+                    "status"    => "FAILED",
+                    "message"   => "ไม่พบประวัติของลูกค้า",
+                    "data"      => ""
+                ), 200
+            );
+        }
     }
 
     public function index_post() {

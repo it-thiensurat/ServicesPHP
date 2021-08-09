@@ -153,7 +153,7 @@ class Authen extends REST_Controller {
                 FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName2 as f
                 WHERE (CONVERT(VARCHAR(10),GETDATE(),121) BETWEEN F.StartDate AND F.finishdate2) AND f.DepID in (1,37,38,40,52)
                 ) AS F ON F.DepID = s.DepID AND S.FnYear = F.FnYear AND S.FnNo = F.FnNo
-                WHERE S.SaleEmp = '" . $username . "' AND S.SaleStatus != 'R' GROUP BY S.SaleCode,S.DepID,S.FnYear,S.FnNo,S.SaleEmp
+                WHERE S.SaleEmp = '" . $username . "' AND S.SaleStatus != 'R' AND S.DepID NOT IN (40) GROUP BY S.SaleCode,S.DepID,S.FnYear,S.FnNo,S.SaleEmp
                 ) AS sl ON sl.SaleEmp = HRM.EmpId
                 WHERE HRM.EmpId = ? AND convert(varchar, BirthDay, 112) = ?";
 
