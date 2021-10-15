@@ -37,31 +37,33 @@ class CustomerSearch extends REST_Controller
             // if ($stmt->row()->CustomerStatus == "T" || $stmt->row()->CustomerStatus == "R") {
                 $data = [];
                 foreach($stmt->result_array() as $k => $v){
-                    $d = array(
-                        'Refno'                 => $v["Refno"], 
-                        'CONTNO'                => $v["CONTNO"],  
-                        'IDCard'                => $v["IDCard"], 	
-                        'PrefixName'            => $v["PrefixName"],  
-                        'CustomerName'          => $v["CustomerName"],  
-                        'PayLastStatus'         => $v["PayLastStatus"],  
-                        'CustomerStatus'        => $v["CustomerStatus"],  
-                        'AccountStatus'         => $v["AccountStatus"],  
-                        'PayType'               => $v["PayType"],  
-                        'AllPeriods'            => $v["AllPeriods"],  
-                        'PayLastPeriod'         => $v["PayLastPeriod"],  
-                        'TotalPrice'            => $v["TotalPrice"],  
-                        'ProductName'           => $v["ProductName"],  
-                        'ProductModel'          => $v["ProductModel"],  
-                        'SaleCode'              => $v["SaleCode"],
-                        'EffDate'               => $v["EffDate"], 
-                        'AgingCumulative'       => $v["AgingCumulative"],  
-                        'AgingContinuous'       => $v["AgingContinuous"],  
-                        'AgingCumulativeDetail' => $v["AgingCumulativeDetail"],  
-                        'StDate'                => $v["StDate"], 
-                        'Address'               => $this->getCustomerAddress($v["Refno"])
-                    );
+                    if (intval($v["AllPeriods"]) != intval($v["PayLastPeriod"])) {
+                        $d = array(
+                            'Refno'                 => $v["Refno"], 
+                            'CONTNO'                => $v["CONTNO"],  
+                            'IDCard'                => $v["IDCard"], 	
+                            'PrefixName'            => $v["PrefixName"],  
+                            'CustomerName'          => $v["CustomerName"],  
+                            'PayLastStatus'         => $v["PayLastStatus"],  
+                            'CustomerStatus'        => $v["CustomerStatus"],  
+                            'AccountStatus'         => $v["AccountStatus"],  
+                            'PayType'               => $v["PayType"],  
+                            'AllPeriods'            => $v["AllPeriods"],  
+                            'PayLastPeriod'         => $v["PayLastPeriod"],  
+                            'TotalPrice'            => $v["TotalPrice"],  
+                            'ProductName'           => $v["ProductName"],  
+                            'ProductModel'          => $v["ProductModel"],  
+                            'SaleCode'              => $v["SaleCode"],
+                            'EffDate'               => $v["EffDate"], 
+                            'AgingCumulative'       => $v["AgingCumulative"],  
+                            'AgingContinuous'       => $v["AgingContinuous"],  
+                            'AgingCumulativeDetail' => $v["AgingCumulativeDetail"],  
+                            'StDate'                => $v["StDate"], 
+                            'Address'               => $this->getCustomerAddress($v["Refno"])
+                        );
 
-                    array_push($data, $d);
+                        array_push($data, $d);
+                    }
                 }
 
                 $this->response(
@@ -116,31 +118,33 @@ class CustomerSearch extends REST_Controller
             // if ($stmt->row()->CustomerStatus == "T" || $stmt->row()->CustomerStatus == "R") {
                 $data = [];
                 foreach($stmt->result_array() as $k => $v){
-                    $d = array(
-                        'Refno'                 => $v["Refno"], 
-                        'CONTNO'                => $v["CONTNO"],  
-                        'IDCard'                => $v["IDCard"], 	
-                        'PrefixName'            => $v["PrefixName"],  
-                        'CustomerName'          => $v["CustomerName"],  
-                        'PayLastStatus'         => $v["PayLastStatus"],  
-                        'CustomerStatus'        => $v["CustomerStatus"],  
-                        'AccountStatus'         => $v["AccountStatus"],  
-                        'PayType'               => $v["PayType"],  
-                        'AllPeriods'            => $v["AllPeriods"],  
-                        'PayLastPeriod'         => $v["PayLastPeriod"],  
-                        'TotalPrice'            => $v["TotalPrice"],  
-                        'ProductName'           => $v["ProductName"],  
-                        'ProductModel'          => $v["ProductModel"],  
-                        'SaleCode'              => $v["SaleCode"],
-                        'EffDate'               => $v["EffDate"], 
-                        'AgingCumulative'       => $v["AgingCumulative"],  
-                        'AgingContinuous'       => $v["AgingContinuous"],  
-                        'AgingCumulativeDetail' => $v["AgingCumulativeDetail"],  
-                        'StDate'                => $v["StDate"], 
-                        'Address'               => $this->getCustomerAddress($v["Refno"])
-                    );
+                    if (intval($v["AllPeriods"]) != intval($v["PayLastPeriod"])) {
+                        $d = array(
+                            'Refno'                 => $v["Refno"], 
+                            'CONTNO'                => $v["CONTNO"],  
+                            'IDCard'                => $v["IDCard"], 	
+                            'PrefixName'            => $v["PrefixName"],  
+                            'CustomerName'          => $v["CustomerName"],  
+                            'PayLastStatus'         => $v["PayLastStatus"],  
+                            'CustomerStatus'        => $v["CustomerStatus"],  
+                            'AccountStatus'         => $v["AccountStatus"],  
+                            'PayType'               => $v["PayType"],  
+                            'AllPeriods'            => $v["AllPeriods"],  
+                            'PayLastPeriod'         => $v["PayLastPeriod"],  
+                            'TotalPrice'            => $v["TotalPrice"],  
+                            'ProductName'           => $v["ProductName"],  
+                            'ProductModel'          => $v["ProductModel"],  
+                            'SaleCode'              => $v["SaleCode"],
+                            'EffDate'               => $v["EffDate"], 
+                            'AgingCumulative'       => $v["AgingCumulative"],  
+                            'AgingContinuous'       => $v["AgingContinuous"],  
+                            'AgingCumulativeDetail' => $v["AgingCumulativeDetail"],  
+                            'StDate'                => $v["StDate"], 
+                            'Address'               => $this->getCustomerAddress($v["Refno"])
+                        );
 
-                    array_push($data, $d);
+                        array_push($data, $d);
+                    }
                 }
 
                 $this->response(

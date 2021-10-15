@@ -229,7 +229,7 @@ class GetTeamListTest extends REST_Controller {
     public function getFnNo($depid) {
         $sql = "SELECT TOP 1 Fortnight_no FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
                 WHERE DepID = ?
-                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
+                AND (CAST(DATEADD(YEAR, 543, '2021-08-23') AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->Fortnight_no;
@@ -241,7 +241,7 @@ class GetTeamListTest extends REST_Controller {
     public function getFnYear($depid) {
         $sql = "SELECT TOP 1 Fortnight_year FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
                 WHERE DepID = ?
-                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
+                AND (CAST(DATEADD(YEAR, 543, '2021-08-23') AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->Fortnight_year;
@@ -252,7 +252,7 @@ class GetTeamListTest extends REST_Controller {
 
     public function getCloseFnNo($depid) {
         $sql = "SELECT TOP 1 * FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
-                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, '10-08-2021', 105) ORDER BY Fortnight_no DESC";
+                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, '2021-08-23', 105) ORDER BY Fortnight_no DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return 1;
@@ -263,7 +263,7 @@ class GetTeamListTest extends REST_Controller {
 
     public function getCloseNum($depid) {
         $sql = "SELECT TOP 1 DateOffset FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
-                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, '10-08-2021', 105) ORDER BY Fortnight_no DESC";
+                WHERE DepID = ? AND CONVERT(varchar, FinishDate, 105) = CONVERT(varchar, '2021-08-23', 105) ORDER BY Fortnight_no DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->DateOffset;
@@ -332,8 +332,7 @@ class GetTeamListTest extends REST_Controller {
     }
 
     public function getDiffTurnProDate($depid, $fnno, $fnyear, $saleno) {
-        $sql = "SELECT TOP 1 --DATEDIFF(day, GETDATE(), DATEADD(day,31,StartDate)) AS DiffDate
-                DATEDIFF(day, '2021-08-10', DATEADD(day,31,StartDate)) AS DiffDate
+        $sql = "SELECT TOP 1 DATEDIFF(day, GETDATE(), DATEADD(day,31,StartDate)) AS DiffDate
                 FROM TSR_Application.dbo.NPT_Sale_Log
                 WHERE DepID = ? AND FnNo = ? AND FnYear = ? AND SaleCode = ?
                 AND SaleStatus IN ('N','P','D') AND PositID NOT IN ('65','85') AND PosID < 3 ORDER BY CreateDate DESC";

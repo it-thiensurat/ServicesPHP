@@ -75,7 +75,7 @@ class GetTeamList extends REST_Controller {
                           LEFT JOIN TSR_Application.dbo.NPT_Sale_Main AS SM ON SL.SaleID = SM.SaleID
                           WHERE ISNULL(LEFT(SL.Salecode,4), '-')+ISNULL(cast(SL.TeamNo AS varchar(4)),'-') = ?
                           AND SL.PosID < 3 AND SL.TeamNo IS NOT NULL AND SL.SaleStatus != 'R' AND SL.DepID = ?
-                          AND SL.FnYear = ? AND SL.FnNo = ? AND SL.PositID NOT IN ('65','85') AND SL.ChanelCode = '000'
+                          AND SL.FnYear = ? AND SL.FnNo = ? AND SL.PositID NOT IN ('65','85')
                           ORDER BY saleemp"; //AND ISNULL(SL.SaleEmpType1, 0) != 8";
                   $stmt = $this->db->query($sql, array($teamno, $depid, $fnyear, $fnno));
 
@@ -94,6 +94,7 @@ class GetTeamList extends REST_Controller {
                               "CheckTime"         => '0',
                               "LeadApproveStatus" => 0,
                               "LeadCheckTime"     => NULL,
+                              "SupCheckTime"      => NULL,
                               "saletype"          => $v["salecode"] == NULL ? 0 : $this->getSaleType($depid, $fnno, $fnyear, $v["salecode"]),
                               "CostBranch"        => $this->getCostBranch(),
                               "TurnproDate"       => $v["salecode"] == NULL ? NULL : $this->getTurnProDate($depid, $fnno, $fnyear, $v["salecode"]),
@@ -146,6 +147,7 @@ class GetTeamList extends REST_Controller {
                                 "CheckTime"         => $v["LeadCheckTime"] == NULL ? '0' : '1',
                                 "LeadApproveStatus" => $v["LeadApproveStatus"],
                                 "LeadCheckTime"     => $v["LeadCheckTime"],
+                                "SupCheckTime"      => $v["SupCheckTime"],
                                 "saletype"          => $v["SaleCode"] == NULL ? 0 : $this->getSaleType($depid, $fnno, $fnyear, $v["SaleCode"]),
                                 "CostBranch"        => $this->getCostBranch(),
                                 "TurnproDate"       => $v["SaleCode"] == NULL ? NULL : $this->getTurnProDate($depid, $fnno, $fnyear, $v["SaleCode"]),

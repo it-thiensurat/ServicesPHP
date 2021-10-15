@@ -99,35 +99,33 @@ $db['default'] = array(
 
 
 //db2 Database Group settings
-$db['uat']['hostname'] = '192.168.111.138';
-$db['uat']['username'] = 'tsr_application';
-$db['uat']['password'] = 'thiens1234';
-$db['uat']['database'] = '';
-$db['uat']['dbdriver'] = 'sqlsrv';
-$db['uat']['dbprefix'] = '';
-$db['uat']['pconnect'] = FALSE;
-$db['uat']['db_debug'] = TRUE;
-$db['uat']['cache_on'] = FALSE;
-$db['uat']['cachedir'] = '';
-$db['uat']['char_set'] = 'utf8';
-$db['uat']['dbcollat'] = 'utf8_general_ci';
-$db['uat']['swap_pre'] = '';
-$db['uat']['autoinit'] = TRUE;
-$db['uat']['stricton'] = FALSE;
-$db['uat']['encrypt'] = FALSE;
-$db['uat']['compress'] = FALSE;
-$db['uat']['failover'] = array();
-$db['uat']['save_queries'] = TRUE;
+// $db['uat']['hostname'] = '192.168.110.150';
+// $db['uat']['username'] = 'tsr_application';
+// $db['uat']['password'] = 'thiens1234';
+// $db['uat']['database'] = '';
+// $db['uat']['dbdriver'] = 'sqlsrv';
+// $db['uat']['dbprefix'] = '';
+// $db['uat']['pconnect'] = FALSE;
+// $db['uat']['db_debug'] = TRUE;
+// $db['uat']['cache_on'] = FALSE;
+// $db['uat']['cachedir'] = '';
+// $db['uat']['char_set'] = 'utf8';
+// $db['uat']['dbcollat'] = 'utf8_general_ci';
+// $db['uat']['swap_pre'] = '';
+// $db['uat']['autoinit'] = TRUE;
+// $db['uat']['stricton'] = FALSE;
+// $db['uat']['encrypt'] = FALSE;
+// $db['uat']['compress'] = FALSE;
+// $db['uat']['failover'] = array();
+// $db['uat']['save_queries'] = TRUE;
 
 
-/*
 
 $db['uat'] = array(
 	'dsn'	=> '',
-    'hostname' => '192.168.111.138',
-    // 'hostname' => '192.168.111.138',
-	'username' => 'tsr_application',
-	'password' => 'thiens1234',
+    'hostname' => '192.168.110.150',
+	'username' => 'tsr_appuat',
+	'password' => 'K2dZIGdU',
 	'database' => '',
 	'dbdriver' => 'sqlsrv',
 	'dbprefix' => '',
@@ -144,4 +142,3 @@ $db['uat'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
-*/

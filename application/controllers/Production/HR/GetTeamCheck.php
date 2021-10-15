@@ -16,6 +16,8 @@ class GetTeamCheck extends REST_Controller
         $depid      = $this->input->post('depid');
         $fnno       = $this->getFnNo($depid);
         $fnyear     = $this->getFnYear($depid);
+        $costbranch = $this->getCostBranch();
+        $supapprove = $this->getApproveStatus($teamcode, $depid, $fnyear, $fnno);
         $sql = "SELECT TeamID,TeamCode,FnYear,FnNo,DepID,LeadCheckTime,LeadCheckNum,LeadCheckWorkNum,LeadCheckOutNum,EmpID
                 FROM TSR_DB1.dbo.SaleTeam_Work
                 WHERE TeamCode = ? AND DepID = ? AND FnYear = ? AND FnNo = ?
@@ -36,8 +38,8 @@ class GetTeamCheck extends REST_Controller
                     'LeadCheckWorkNum'  => $v["LeadCheckWorkNum"],
                     'LeadCheckOutNum'   => $v["LeadCheckOutNum"],
                     'EmpID'             => $v["EmpID"],
-                    'CostBranch'        => $this->getCostBranch(),
-                    'WorkDetail'        => $this->getWorkDetail($v["FnNo"], $v["FnYear"], $v["DepID"], $v["TeamID"])
+                    'CostBranch'        => $costbranch,
+                    'WorkDetail'        => $costbranch == 0 ? $this->getWorkDetail($v["FnNo"], $v["FnYear"], $v["DepID"], $v["TeamID"]) : $this->getWorkDetail_lockCostBranch($v["FnNo"], $v["FnYear"], $v["DepID"], $v["TeamID"])
                 );
 
                 array_push($data, $r);
@@ -47,7 +49,7 @@ class GetTeamCheck extends REST_Controller
                 array(
                     "status"                => "SUCCESS",
                     "message"               => "รายการลงเวลา",
-                    "SupApproveStatus"      => $this->getApproveStatus($teamcode, $depid, $fnyear, $fnno),
+                    "SupApproveStatus"      => $supapprove,
                     "data"                  => $data
                 ), 200
             );
@@ -87,7 +89,7 @@ class GetTeamCheck extends REST_Controller
     }
 
     public function getWorkDetail($fno, $fyear, $dep, $teamid) {
-        $sql = "SELECT wd.DetailID, wd.TeamID, wd.EmpID, wd.EmpName, wd.SaleCode, wd.LeadCheckTime,
+        $sql = "SELECT wd.DetailID, wd.TeamID, wd.EmpID, wd.EmpName, wd.SaleCode, wd.LeadCheckTime, wd.SupCheckTime,
                 wd.CitizenID, CONVERT(varchar(10), wd.PaymentAmount) AS PayAmount,
                 wd.LeadApproveStatus,
                 CASE
@@ -106,6 +108,35 @@ class GetTeamCheck extends REST_Controller
                   WHEN wd.SupCheckTime IS NULL THEN wd.LeadApproveStatus
                 	ELSE wd.SupApproveStatus
                 END AS SwitchStatus
+                FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS wd
+                LEFT JOIN TSR_Application.dbo.NPT_Sale_Log AS sl ON sl.FnNo = ? AND sl.FnYear = ? AND sl.DepID = ? AND sl.SaleCode = wd.SaleCode
+                          AND sl.SaleStatus IN ('N', 'P','D') AND sl.PositID NOT IN ('65','85') AND sl.PosID < 3
+                WHERE wd.TeamID = ? ORDER BY wd.DetailID";
+        $stmt = $this->db->query($sql, array($fno, $fyear, $dep, $teamid));
+        if ($stmt->num_rows() > 0) {
+            return $stmt->result_array();
+        } else {
+            return null;
+        }
+    }
+
+    public function getWorkDetail_lockCostBranch($fno, $fyear, $dep, $teamid) {
+        $sql = "SELECT wd.DetailID, wd.TeamID, wd.EmpID, wd.EmpName, wd.SaleCode, wd.LeadCheckTime, wd.SupCheckTime,
+                wd.CitizenID, CONVERT(varchar(10), wd.PaymentAmount) AS PayAmount,
+                wd.LeadApproveStatus,
+                CASE
+                  WHEN wd.SaleCode IS NULL THEN 0
+                  ELSE
+                	(CASE WHEN DATEDIFF(dd,DATEADD(dd,-1,sl.StartDate),GETDATE()) >= 31 THEN 1 ELSE (CASE WHEN sl.saleempType = 1 THEN 0 ELSE 1 END) END)
+                END AS saletype,
+                CASE
+                  WHEN wd.SaleCode IS NULL THEN NULL
+                  ELSE
+                	DATEADD(day,31,sl.StartDate)
+                END AS TurnproDate,
+                wd.Image,
+                REPLACE(wd.EmpID,'A','0') AS EmpImage,
+                wd.SupApproveStatus AS SwitchStatus
                 FROM TSR_DB1.dbo.SaleTeam_Work_Detail AS wd
                 LEFT JOIN TSR_Application.dbo.NPT_Sale_Log AS sl ON sl.FnNo = ? AND sl.FnYear = ? AND sl.DepID = ? AND sl.SaleCode = wd.SaleCode
                           AND sl.SaleStatus IN ('N', 'P','D') AND sl.PositID NOT IN ('65','85') AND sl.PosID < 3

@@ -13,7 +13,7 @@ class CustomerSearch extends REST_Controller
     
     public function index_get() {
     //    echo phpinfo();
-    $searchValue = $this->input->get('search');
+        $searchValue = $this->input->get('search');
         $sql = "SELECT * FROM 
 				(
 					SELECT M.Refno, M.CONTNO, M.IDCard,	M.PrefixName, 
@@ -29,10 +29,8 @@ class CustomerSearch extends REST_Controller
                     LEFT JOIN TSR_Application.dbo.DebtorAnalyze_Address AS AD ON M.Refno = AD.Refno AND AD.AddressTypeCode = 'AddressIDCard'
                     WHERE M.CustomerStatus IN ('T', 'R', 'N')
 				) AS MT 
-				WHERE MT.IDCard = ? OR MT.CustomerName LIKE '" . $searchValue . "%' OR MT.CustomerName LIKE '%" . $searchValue . "' OR REPLACE(MT.TelHome, '-', '') = ? OR REPLACE(MT.TelMobile, '-', '') = ? 
-                AND MT.df <= 10
-                ORDER BY MT.EffDate DESC";	
-        $stmt = $this->db->query($sql, array($searchValue, $searchValue, $searchValue));
+				WHERE MT.IDCard = '" . $searchValue . "' OR MT.CustomerName LIKE '%" . $searchValue . "%' AND MT.df <= 10 ORDER BY MT.EffDate DESC";	
+        $stmt = $this->db->query($sql);
         if ($stmt->num_rows() > 0) {
             // if ($stmt->row()->CustomerStatus == "T" || $stmt->row()->CustomerStatus == "R") {
                 $data = [];

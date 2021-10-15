@@ -27,16 +27,31 @@ class AddToZKTime extends REST_Controller
             $checktime    = $v["LeadCheckTime"] == NULL ? $date : $v["LeadCheckTime"];
             $status       = $v["SwitchStatus"];
             $citizen      = $v["CitizenID"];
+            $check        = $v["LeadCheckTime"] == NULL ? 0 : 1;
 
-            if ($status) {
-                if (!$this->checkEmpHasCheckIn($empid, $citizen)) {
-                    $stmt = $this->db->query($sql, array($id, $checktime, 'I', 1, '999', 0, 0, $citizen, $empid, $date));
+            if ($empid != NULL) {
+                if ($check) {
+                    if (!$this->checkEmpHasCheckIn($empid, $citizen)) {
+                        $stmt = $this->db->query($sql, array($id, $checktime, 'I', 1, '999', 0, 0, $citizen, $empid, $date));
+                    }
+                } else {
+                    if ($this->checkEmpHasCheckIn($empid, $citizen)) {
+                        $sql2 = "DELETE FROM ZKTimeData.dbo.CHECKINOUT
+                                 WHERE EmpId = ? AND CitizenId = ? AND SENSORID = '999' AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
+                        $stmt2 = $this->db->query($sql2, array($empid, $citizen));
+                    }
                 }
             } else {
-                if ($this->checkEmpHasCheckIn($empid, $citizen)) {
-                    $sql2 = "DELETE FROM ZKTimeData.dbo.CHECKINOUT
-                             WHERE EmpId = ? AND CitizenId = ? AND SENSORID = '999' AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
-                    $stmt2 = $this->db->query($sql2, array($empid, $citizen));
+                if ($check) {
+                    if (!$this->checkNewSaleCheckIn($citizen)) {
+                        $stmt = $this->db->query($sql, array(99999, $checktime, 'I', 1, '999', 0, 0, $citizen, NULL, $date));
+                    }
+                } else {
+                    if ($this->checkNewSaleCheckIn($citizen)) {
+                        $sql3 = "DELETE FROM ZKTimeData.dbo.CHECKINOUT
+                                 WHERE CitizenId = ? AND SENSORID = '999' AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
+                        $stmt3 = $this->db->query($sql3, array($citizen));
+                    }
                 }
             }
         }
@@ -46,6 +61,17 @@ class AddToZKTime extends REST_Controller
         $sql = "SELECT * FROM ZKTimeData.dbo.CHECKINOUT
                 WHERE EmpId = ? AND CitizenId = ? AND SENSORID = '999' AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
         $stmt = $this->db->query($sql, array($empid, $citizen));
+        if ($stmt->num_rows() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function checkNewSaleCheckIn($citizen) {
+        $sql = "SELECT * FROM ZKTimeData.dbo.CHECKINOUT
+                WHERE CitizenId = ? AND SENSORID = '999' AND CONVERT(varchar, CreateDate , 105) = CONVERT(varchar, GETDATE(), 105)";
+        $stmt = $this->db->query($sql, array($citizen));
         if ($stmt->num_rows() > 0) {
             return true;
         } else {

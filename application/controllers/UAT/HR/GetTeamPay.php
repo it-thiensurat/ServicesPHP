@@ -73,7 +73,7 @@ class GetTeamPay extends REST_Controller
     public function getFnNo($depid) {
         $sql = "SELECT TOP 1 Fortnight_no FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
                 WHERE DepID = ?
-                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
+                AND (CAST(DATEADD(YEAR, 543, '2021-08-23') AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_no DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->Fortnight_no;
@@ -85,7 +85,7 @@ class GetTeamPay extends REST_Controller
     public function getFnYear($depid) {
         $sql = "SELECT TOP 1 Fortnight_year FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName
                 WHERE DepID = ?
-                AND (CAST(DATEADD(YEAR, 543, GETDATE()) AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
+                AND (CAST(DATEADD(YEAR, 543, '2021-08-23') AS DATE) BETWEEN OpenDate AND CloseDate) ORDER BY Fortnight_year DESC";
         $stmt = $this->db->query($sql, array($depid));
         if ($stmt->num_rows() > 0) {
             return $stmt->row()->Fortnight_year;

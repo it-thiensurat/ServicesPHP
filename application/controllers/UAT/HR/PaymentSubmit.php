@@ -74,6 +74,9 @@ class PaymentSubmit extends REST_Controller
 
                     $fupload        = ftp_put($ftp, $image_dest, $file, FTP_BINARY);
                     $signatureUrl   = $this->img_url . $image_dest;
+                    if ($fupload) {
+                        unlink($file);
+                    }
                 } else {
                     $this->response(
                         array(

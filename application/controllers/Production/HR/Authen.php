@@ -73,11 +73,6 @@ class Authen extends REST_Controller {
         $username = $this->input->get('username');
         $password = $this->input->get('password');
         $this->authenEmpID($username, $password);
-        // if ($this->checkEmpID($username)) {
-        //     $this->authenEmpID($username, $password);
-        // } else {
-        //     $this->authenLDAP($username, $password);
-        // }
     }
 
     public function authenWithToken($token, $key) {
@@ -85,22 +80,12 @@ class Authen extends REST_Controller {
         $username = $data['username'];
         $password = $data['password'];
         $this->authenEmpID($username, $password);
-        // if ($this->checkEmpID($username)) {
-        //     $this->authenEmpID($username, $password);
-        // } else {
-        //     $this->authenLDAP($username, $password);
-        // }
     }
 
     public function index_post() {
         $username = $this->input->post('username');
         $password = $this->input->post('password');
         $this->authenEmpID($username, $password);
-        // if ($this->checkEmpID($username)) {
-        //     $this->authenEmpID($username, $password);
-        // } else {
-        //     $this->authenLDAP($username, $password);
-        // }
     }
 
     public function authenEmpID($username, $password) {
@@ -109,39 +94,23 @@ class Authen extends REST_Controller {
         $divisionid = '';
         $firstname = '';
         $lastname = '';
-        // $sql = "SELECT * FROM TSR_Application.dbo.TSR_Full_Employee_Sync_AD AS TF
-        //         LEFT JOIN TSR_Application.dbo.TSR_Full_EmployeeLogic AS TE ON TF.empid = TE.empid
-        //         WHERE TF.empid = ? AND convert(varchar, TE.BirthDay, 112) = ?";
-
-        // $sql = "SELECT EmpId, PreName, NameThai, SurName, CardID, positid, PositName, DepartId, DepartName, DivisionId, DivisionName, CompanyId, CompanyName
-        //         FROM TSR_Application.app.TSR_Full_EmployeeLogic2
-        //         WHERE EmpId = ? AND convert(varchar, BirthDay, 112) = ?";
-
-        // $sql = "SELECT EmpId, PreName, NameThai, SurName, CardID, positid, PositName, DepartId, DepartName,
-        //             DivisionId, DivisionName, CompanyId, CompanyName, DistanceCheckIn, CameraCheckIn, DistanceCheckOut, CameraCheckOut, BranchName, BranchCode, Latitude, Longitude, DistanceIn, DistanceOut, StatusId, Status
-        //         FROM TSR_DB1.dbo.V_HRM_FULL_EMPLOYEELOGIC
-        //         WHERE EmpId = ? AND convert(varchar, BirthDay, 112) = ?";
-
-        // $sql = "SELECT HRM.EmpId, HRM.PreName, HRM.NameThai, HRM.SurName, HRM.CardID, HRM.positid, HRM.PositName, HRM.DepartId, HRM.DepartName,
-        //         HRM.DivisionId, HRM.DivisionName, HRM.CompanyId, HRM.CompanyName, HRM.DistanceCheckIn, HRM.CameraCheckIn, HRM.DistanceCheckOut,
-        //         HRM.CameraCheckOut, HRM.BranchName, HRM.BranchCode, HRM.Latitude, HRM.Longitude, HRM.DistanceIn, HRM.DistanceOut, HRM.StatusId, HRM.Status,
-        //         sl.SaleCode, sl.TeamNo, sl.PosID,sl.DepID,sl.FnYear,sl.FnNo, LEFT(sl.TeamNo, 4) AS TeamCode
-        //         FROM TSR_DB1.dbo.V_HRM_FULL_EMPLOYEELOGIC AS HRM LEFT JOIN (
-        //         SELECT S.SaleCode,ISNULL(LEFT(S.SaleCode,4), '-')+ISNULL(cast(S.TeamNo AS varchar(4)),'-') AS TeamNo
-        //         ,S.PosID,S.DepID,S.FnYear,S.FnNo, S.SaleEmp
-        //         FROM TSR_Application.dbo.NPT_Sale_Log AS S WITH(NOLOCK)
-        //         INNER JOIN (
-        //         SELECT f.Fortnight_year as FnYear,f.Fortnight_no as FnNo,DepID
-        //         FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName2 as f
-        //         WHERE (CONVERT(VARCHAR(10),GETDATE(),121) BETWEEN F.StartDate AND F.finishdate2) AND f.DepID in (1,37,38,40,52)
-        //         ) AS F ON F.DepID = s.DepID AND S.FnYear = F.FnYear AND S.FnNo = F.FnNo
-        //         WHERE S.SaleEmp = '" . $username . "' AND S.SaleStatus != 'R'
-        //         ) AS sl ON sl.SaleEmp = HRM.EmpId
-        //         WHERE HRM.EmpId = ? AND convert(varchar, BirthDay, 112) = ?";
 
         $sql = "SELECT HRM.EmpId, HRM.PreName, HRM.NameThai, HRM.SurName, HRM.CardID, HRM.positid, HRM.PositName, HRM.DepartId, HRM.DepartName,
-                HRM.DivisionId, HRM.DivisionName, HRM.CompanyId, HRM.CompanyName, HRM.DistanceCheckIn, HRM.CameraCheckIn, HRM.DistanceCheckOut,
-                HRM.CameraCheckOut, HRM.BranchName, HRM.BranchCode, HRM.Latitude, HRM.Longitude, HRM.DistanceIn, HRM.DistanceOut, HRM.StatusId, HRM.Status,
+                HRM.DivisionId, HRM.DivisionName, HRM.CompanyId, HRM.CompanyName, HRM.DistanceCheckIn, HRM.CameraCheckIn, HRM.DistanceCheckOut, HRM.CameraCheckOut,
+                (CASE WHEN HRM.WorkLocation IN ('9998','IDW001') THEN HRM.WorkLocationName
+                      WHEN HRM.WorkLocation IN ('9997','IDW') THEN HRM.WorkLocationName
+                      ELSE HRM.BranchName END) AS BranchName,
+                (CASE WHEN HRM.WorkLocation IN ('9998','IDW001') THEN HRM.WorkLocation
+                      WHEN HRM.WorkLocation IN ('9997','IDW') THEN HRM.WorkLocation
+                      ELSE HRM.BranchCode END) AS BranchCode,
+                (CASE WHEN HRM.WorkLocation IN ('9998','IDW001') THEN 13.999515
+                      WHEN HRM.WorkLocation IN ('9997','IDW') THEN 13.8835870880
+                      ELSE HRM.Latitude END) AS Latitude,
+                (CASE WHEN HRM.WorkLocation IN ('9998','IDW001') THEN 100.542918
+                      WHEN HRM.WorkLocation IN ('9997','IDW') THEN 100.5262195544
+                      ELSE HRM.Longitude END) AS Longitude,
+                HRM.DistanceIn, HRM.DistanceOut, HRM.StatusId, HRM.Status,
+                HRM.WorkLocation, HRM.WorkLocationName,
                 sl.SaleCode, sl.TeamNo, sl.PosID,sl.DepID,sl.FnYear,sl.FnNo, LEFT(sl.TeamNo, 4) AS TeamCode
                 FROM TSR_DB1.dbo.V_HRM_FULL_EMPLOYEELOGIC AS HRM LEFT JOIN (
                 SELECT S.SaleCode,MAX(ISNULL(LEFT(S.SaleCode,4), '-')+ISNULL(cast(S.TeamNo AS varchar(4)),'-')) AS TeamNo
@@ -153,7 +122,7 @@ class Authen extends REST_Controller {
                 FROM TSR_Application.dbo.view_Fortnight_Table3_ext_DepName2 as f
                 WHERE (CONVERT(VARCHAR(10),GETDATE(),121) BETWEEN F.StartDate AND F.finishdate2) AND f.DepID in (1,37,38,40,52)
                 ) AS F ON F.DepID = s.DepID AND S.FnYear = F.FnYear AND S.FnNo = F.FnNo
-                WHERE S.SaleEmp = '" . $username . "' AND S.SaleStatus != 'R' AND S.DepID NOT IN (40) GROUP BY S.SaleCode,S.DepID,S.FnYear,S.FnNo,S.SaleEmp
+                WHERE S.SaleEmp = '" . $username . "' AND S.SaleStatus != 'R' AND S.DepID NOT IN (40) AND S.PosID IN (3,4) GROUP BY S.SaleCode,S.DepID,S.FnYear,S.FnNo,S.SaleEmp
                 ) AS sl ON sl.SaleEmp = HRM.EmpId
                 WHERE HRM.EmpId = ? AND convert(varchar, BirthDay, 112) = ?";
 
@@ -188,6 +157,8 @@ class Authen extends REST_Controller {
                 'CameraCheckOut'    => $r['CameraCheckOut'],
                 'branchName'        => $r['BranchName'],
                 'branchCode'        => $r['BranchCode'],
+                'WorkLocation'      => $r['WorkLocation'],
+                'WorkLocationName'  => $r['WorkLocationName'],
                 'latitude'          => $r['Latitude'],
                 'longitude'         => $r['Longitude'],
                 'DistanceIn'        => $r['DistanceIn'],
@@ -281,35 +252,14 @@ class Authen extends REST_Controller {
         $firstname = '';
         $lastname = '';
         if($info["count"] !=0 ) {
-            // $sql    = "SELECT TOP 1 * FROM TSR_Application.dbo.TSR_Full_Employee_Sync_AD WHERE empID like '%$emp_id' ";
             $sql    = "SELECT TOP 1 * FROM TSR_Application.app.TSR_Full_EmployeeLogic2 WHERE EmpId like '%$emp_id' ";
             $value  = $this->Nget($sql);
             $val    = $value[0];
-
-            // $firstname = $r['namethai'];
-            // $lastname = $r['surname'];
-            // $cardid = $val['cardid'];
-            // $divisionid = $val['divisionid'];
 
             $cardid     = $val['CardID'];
             $firstname  = $val['NameThai'];
             $lastname   = $val['SurName'];
             $divisionid = $val['DivisionId'];
-            // $result = array(
-            //     'empId'         => $emp_id,
-            //     'title'         => $val['prename'],
-            //     'firstname'     => $val['namethai'],
-            //     'lastname'      => $val['surname'],
-            //     'cardid'        => $cardid,
-            //     'position'      => $val['PositName'],
-            //     'positionId'    => $val['positid'],
-            //     'department'    => $val['departname'],
-            //     'departmentId'  => $val['departid'],
-            //     'division'      => $val['divisionname'],
-            //     'divisionId'    => $divisionid,
-            //     'company'       => $val['companyname'],
-            //     'companyId'     => $val['companyid']
-            // );
 
             $result = array(
                 'empId'         => $emp_id,
@@ -430,6 +380,5 @@ class Authen extends REST_Controller {
         } else {
             return null;
         }
-
     }
 }

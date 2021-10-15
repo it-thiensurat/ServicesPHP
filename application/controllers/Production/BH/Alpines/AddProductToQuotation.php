@@ -13,10 +13,10 @@ class AddProductToQuotation extends REST_Controller
     }
 
     public function index_get() {
-        // echo $this->generateQuotationNumber();
-        $currentdate                = date('Y-m-d');
-        $expiredate = date('Y-m-d', strtotime($currentdate. ' + 1 month'));
-        echo $expiredate;
+        echo $this->generateQuotationNumber();
+        // $currentdate                = date('Y-m-d');
+        // $expiredate = date('Y-m-d', strtotime($currentdate. ' + 1 month'));
+        // echo $expiredate;
     }
 
     public function index_post() {
@@ -55,24 +55,6 @@ class AddProductToQuotation extends REST_Controller
 
         $this->db->where('APCUS_ID', $customer_id);
         if ($this->db->update('TSR_DB1.dbo.ALPINE_CUSTOMER', $dataCustomer)) {
-            $dataQuotation = array(
-                'APQ_ID'                => $quotationId,
-                'APCUS_ID'              => $customer_id,
-                'APQ_DATE'              => date('Y-m-d'),
-                'APQ_EXPIRE_DATE'       => $expiredate,
-                'APQ_EMP_ID'            => $emp_id,
-                'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
-                'APQ_PROJECTNAME'       => $project_name,
-                'APQ_PROMOTION_TEXT'    => $promotion_text,
-                'APQ_DISCOUNT'          => floatval($discount),
-                'APQ_TOTAL'             => floatval($total),
-                'APQ_GRAND_TOTAL'       => floatval($grand_total),
-                'APQ_STATUS'            => 0,
-                'APQ_CREATE_BY'         => $emp_id,
-                'APQ_PAYMENT_TYPE'      => $payType,
-                'APQ_TRANSPORT'         => floatval($transport)
-            );
-
             if ($actionType == "edit") {
                 if ($quotationId == "") {
                     $quotationId = $this->generateQuotationNumber();
@@ -80,7 +62,7 @@ class AddProductToQuotation extends REST_Controller
                         'APQ_ID'                => $quotationId,
                         'APCUS_ID'              => $customer_id,
                         'APQ_DATE'              => date('Y-m-d'),
-                        'APQ_EXPIRE_DATE'       => date("Y-m-d"),
+                        'APQ_EXPIRE_DATE'       => $expiredate,
                         'APQ_EMP_ID'            => $emp_id,
                         'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
                         'APQ_PROJECTNAME'       => $project_name,
@@ -93,6 +75,17 @@ class AddProductToQuotation extends REST_Controller
                         'APQ_PAYMENT_TYPE'      => $payType,
                         'APQ_TRANSPORT'         => floatval($transport)
                     );
+
+                    // $this->response(
+                    //     array(
+                    //         "status"    => "FAILED",
+                    //         "message"   => "บันทึกข้อมูลสำเร็จ",
+                    //         "data"      => $this->input->post()
+                    //     ), 200
+                    // );
+            
+                    // exit();
+
                     if ($this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
                         foreach($product as $k => $v) {
                             $dataDetail = array(
@@ -124,6 +117,24 @@ class AddProductToQuotation extends REST_Controller
                         );
                     }
                 } else {
+                    $dataQuotation = array(
+                        'APQ_ID'                => $quotationId,
+                        'APCUS_ID'              => $customer_id,
+                        'APQ_DATE'              => date('Y-m-d'),
+                        'APQ_EXPIRE_DATE'       => $expiredate,
+                        'APQ_EMP_ID'            => $emp_id,
+                        'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
+                        'APQ_PROJECTNAME'       => $project_name,
+                        'APQ_PROMOTION_TEXT'    => $promotion_text,
+                        'APQ_DISCOUNT'          => floatval($discount),
+                        'APQ_TOTAL'             => floatval($total),
+                        'APQ_GRAND_TOTAL'       => floatval($grand_total),
+                        'APQ_STATUS'            => 0,
+                        'APQ_CREATE_BY'         => $emp_id,
+                        'APQ_PAYMENT_TYPE'      => $payType,
+                        'APQ_TRANSPORT'         => floatval($transport)
+                    );
+                    
                     $this->deleteProduct($quotationId);
                     $this->db->where('APQ_ID', $quotationId);
                     if ($this->db->update('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
@@ -163,7 +174,7 @@ class AddProductToQuotation extends REST_Controller
                     'APQ_ID'                => $quotationId,
                     'APCUS_ID'              => $customer_id,
                     'APQ_DATE'              => date('Y-m-d'),
-                    'APQ_EXPIRE_DATE'       => date("Y-m-d"),
+                    'APQ_EXPIRE_DATE'       => $expiredate,
                     'APQ_EMP_ID'            => $emp_id,
                     'APQ_EMP_NAME'          => $this->getEmpName($emp_id),
                     'APQ_PROJECTNAME'       => $project_name,
@@ -176,6 +187,7 @@ class AddProductToQuotation extends REST_Controller
                     'APQ_PAYMENT_TYPE'      => $payType,
                     'APQ_TRANSPORT'         => floatval($transport)
                 );
+
                 if ($this->db->insert('TSR_DB1.dbo.ALPINE_QUOTATION', $dataQuotation)) {
                     foreach($product as $k => $v) {
                         $dataDetail = array(

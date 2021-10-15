@@ -78,7 +78,7 @@ class GetCustomerList extends REST_Controller
 
     public function index_post() {
         $empId  = $this->input->post('empId');
-        if (!isset($empId)) {
+        if ($empId == "") {
             // $sql    = "SELECT *, 
             //             (SELECT TOP 1 aq.APQ_ID FROM TSR_DB1.dbo.ALPINE_CUSTOMER ac 
             //                 LEFT JOIN TSR_DB1.dbo.ALPINE_QUOTATION aq ON ac.APCUS_ID = aq.APCUS_ID 

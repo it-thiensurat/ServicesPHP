@@ -8,11 +8,12 @@ class Notification extends REST_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->database();
+        // $this->load->database();
+        $this->db = $this->load->database('uat', TRUE);
     }
 
     public function index_get() {
-        $sql = "exec SQLUAT.TSR_Application.dbo.getStartDate100";
+        $sql = "exec TSR_Application.dbo.getStartDate100";
         $stmt = $this->db->query($sql);
         // print_r($stmt->row()->IsStartDate100);
         // exit();
